@@ -7,16 +7,16 @@
   var params = new URLSearchParams(location.search);
   var isPresenter = params.has('presenter');
   var chan = null;
-  /* theme: shared with the home page through localStorage 'theme-v2' (light by default) */
+  /* theme: shared with the home page through localStorage 'theme-v3' (dark by default) */
   var root = document.documentElement;
-  function savedTheme() { try { return localStorage.getItem('theme-v2') || 'light'; } catch (e) { return 'light'; } }
+  function savedTheme() { try { return localStorage.getItem('theme-v3') || 'dark'; } catch (e) { return 'dark'; } }
   root.setAttribute('data-theme', savedTheme());
   function toggleTheme() {
     var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     root.setAttribute('data-theme', t);
-    try { localStorage.setItem('theme-v2', t); } catch (e) {}
+    try { localStorage.setItem('theme-v3', t); } catch (e) {}
   }
-  addEventListener('storage', function (e) { if (e.key === 'theme-v2') root.setAttribute('data-theme', savedTheme()); });
+  addEventListener('storage', function (e) { if (e.key === 'theme-v3') root.setAttribute('data-theme', savedTheme()); });
   try { chan = new BroadcastChannel('deck:' + location.pathname); } catch (e) {}
   function send(msg) {
     if (chan) chan.postMessage(msg);

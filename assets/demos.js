@@ -17,7 +17,7 @@
     skyA: '#d7e8cc', skyB: '#bcd8ad', leafA: '#86b875', leafB: '#9cc986', leafOcc: '#74a964', inset: 'rgba(255,255,255,.92)', plot: '#f4f0ea',
     safe: 'rgba(22,163,74,.55)', obsF: 'rgba(224,62,62,.12)', obsS: 'rgba(224,62,62,.6)' };
   var C = {};
-  function applyTheme() { var k; var P = document.documentElement.getAttribute('data-theme') === 'dark' ? DARK : LIGHT; for (k in P) C[k] = P[k]; }
+  function applyTheme() { var k; var P = document.documentElement.getAttribute('data-theme') === 'light' ? LIGHT : DARK; for (k in P) C[k] = P[k]; }
   applyTheme();
   try { new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) {}
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;

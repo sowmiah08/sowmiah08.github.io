@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -771,12 +771,12 @@
   }
 
   /* ---------- theme ---------- */
-  try { var t = localStorage.getItem('theme-v2'); root.setAttribute('data-theme', t || 'light'); } catch (e) {}
-  addEventListener('storage', function (e) { if (e.key === 'theme-v2') root.setAttribute('data-theme', e.newValue || 'light'); });
+  try { var t = localStorage.getItem('theme-v3'); root.setAttribute('data-theme', t || 'dark'); } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'theme-v3') root.setAttribute('data-theme', e.newValue || 'dark'); });
   document.getElementById('theme').addEventListener('click', function () {
     var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme-v2', next); } catch (e) {}
+    try { localStorage.setItem('theme-v3', next); } catch (e) {}
   });
   document.getElementById('yr').textContent = new Date().getFullYear();
 
