@@ -7,6 +7,16 @@
   var params = new URLSearchParams(location.search);
   var isPresenter = params.has('presenter');
   var chan = null;
+  /* theme: shared with the home page through localStorage 'theme-v2' (light by default) */
+  var root = document.documentElement;
+  function savedTheme() { try { return localStorage.getItem('theme-v2') || 'light'; } catch (e) { return 'light'; } }
+  root.setAttribute('data-theme', savedTheme());
+  function toggleTheme() {
+    var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', t);
+    try { localStorage.setItem('theme-v2', t); } catch (e) {}
+  }
+  addEventListener('storage', function (e) { if (e.key === 'theme-v2') root.setAttribute('data-theme', savedTheme()); });
   try { chan = new BroadcastChannel('deck:' + location.pathname); } catch (e) {}
   function send(msg) {
     if (chan) chan.postMessage(msg);
@@ -38,6 +48,7 @@
     '<button id="bOv" class="hide-s" title="All slides (O)">grid</button>' +
     '<button id="bPres" class="hide-s" title="Presenter window with notes & timer (S)">presenter</button>' +
     '<button id="bRead" title="Scroll / read mode (R)">read</button>' +
+    '<button id="bTheme" title="Light / dark theme (T)">◐</button>' +
     '<button id="bFs" class="hide-s" title="Fullscreen (F)">⛶</button>' +
     '<button id="bHelp" class="hide-s" title="Keyboard shortcuts (?)">?</button>';
   document.body.appendChild(bar);
@@ -46,7 +57,7 @@
   var notes = document.createElement('div'); notes.id = 'notes'; notes.innerHTML = '<div class="h">Speaker notes</div><div class="tx" id="ntx"></div>'; document.body.appendChild(notes);
   var ov = document.createElement('div'); ov.id = 'overview'; ov.innerHTML = '<div class="gridv" id="ovg"></div>'; document.body.appendChild(ov);
   var help = document.createElement('div'); help.id = 'help';
-  help.innerHTML = '<b>→ space</b>next<br><b>←</b>previous<br><b>N</b>speaker notes<br><b>O</b>all slides<br><b>S</b>presenter window<br><b>F</b>fullscreen<br><b>R</b>read / scroll mode<br><b>Home End</b>first / last<br><b>Esc</b>close';
+  help.innerHTML = '<b>→ space</b>next<br><b>←</b>previous<br><b>N</b>speaker notes<br><b>O</b>all slides<br><b>S</b>presenter window<br><b>F</b>fullscreen<br><b>T</b>light / dark<br><b>R</b>read / scroll mode<br><b>Home End</b>first / last<br><b>Esc</b>close';
   document.body.appendChild(help);
 
   /* ================= deck mode ================= */
@@ -148,6 +159,7 @@
   document.getElementById('bRead').onclick = function () { setRead(!document.body.classList.contains('read-mode')); };
   document.getElementById('bHelp').onclick = function () { toggle('help-open'); };
   document.getElementById('bFs').onclick = fullscreen;
+  document.getElementById('bTheme').onclick = toggleTheme;
   function fullscreen() {
     try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {}
   }
@@ -166,6 +178,7 @@
     else if (k === 'o' || k === 'O' || k === 'g' || k === 'G') toggle('ov-open');
     else if (k === 'f' || k === 'F') fullscreen();
     else if (k === 's' || k === 'S') openPresenter();
+    else if (k === 't' || k === 'T') toggleTheme();
     else if (k === '?') toggle('help-open');
   });
   stage.addEventListener('click', function (e) {

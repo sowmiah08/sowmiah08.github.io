@@ -772,6 +772,7 @@
 
   /* ---------- theme ---------- */
   try { var t = localStorage.getItem('theme-v2'); root.setAttribute('data-theme', t || 'light'); } catch (e) {}
+  addEventListener('storage', function (e) { if (e.key === 'theme-v2') root.setAttribute('data-theme', e.newValue || 'light'); });
   document.getElementById('theme').addEventListener('click', function () {
     var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     root.setAttribute('data-theme', next);

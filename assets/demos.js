@@ -5,8 +5,21 @@
  * algorithm — the numbers on the project pages come from the real systems.
  */
 (function () {
-  var C = { acc: '#ff8a2b', blue: '#4cc6ff', green: '#3ddc84', red: '#ff5f5f', yel: '#ffc23d', violet: '#b48cff',
-    text: '#fbfaf8', muted: '#c3beb7', faint: '#827c74', line: '#3a3c43', grid: 'rgba(255,170,100,.06)', bg: '#16171b', panel: '#1d1f24' };
+  // colours follow the page theme (<html data-theme="light|dark">); demos redraw every frame, so swapping C is enough
+  var DARK = { acc: '#ff8a2b', blue: '#4cc6ff', green: '#3ddc84', red: '#ff5f5f', yel: '#ffc23d', violet: '#b48cff',
+    text: '#fbfaf8', muted: '#c3beb7', faint: '#827c74', line: '#3a3c43', grid: 'rgba(255,170,100,.06)', bg: '#16171b', panel: '#1d1f24',
+    link: '#2c2f36', table: '#5a554f', grey: '#8d8a86', redHi: '#ff8b8b', camA: '#2b2a28', camB: '#1f1e1c', scan: 'rgba(255,255,255,.03)',
+    skyA: '#2a3a2a', skyB: '#1b261b', leafA: '#2f5a2c', leafB: '#3f7436', leafOcc: '#356630', inset: 'rgba(16,17,20,.88)', plot: '#121316',
+    safe: 'rgba(61,220,132,.5)', obsF: 'rgba(255,95,95,.18)', obsS: 'rgba(255,95,95,.6)' };
+  var LIGHT = { acc: '#e8650a', blue: '#0b8fd1', green: '#16a34a', red: '#e03e3e', yel: '#c98a00', violet: '#7c4ddb',
+    text: '#1d1b18', muted: '#57524b', faint: '#8a847c', line: '#d9d3cb', grid: 'rgba(200,110,40,.09)', bg: '#fbf9f6', panel: '#f1ede7',
+    link: '#d6cfc5', table: '#b9b1a6', grey: '#9c968f', redHi: '#e85d5d', camA: '#ece7df', camB: '#dcd5ca', scan: 'rgba(0,0,0,.035)',
+    skyA: '#d7e8cc', skyB: '#bcd8ad', leafA: '#86b875', leafB: '#9cc986', leafOcc: '#74a964', inset: 'rgba(255,255,255,.92)', plot: '#f4f0ea',
+    safe: 'rgba(22,163,74,.55)', obsF: 'rgba(224,62,62,.12)', obsS: 'rgba(224,62,62,.6)' };
+  var C = {};
+  function applyTheme() { var k; var P = document.documentElement.getAttribute('data-theme') === 'dark' ? DARK : LIGHT; for (k in P) C[k] = P[k]; }
+  applyTheme();
+  try { new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] }); } catch (e) {}
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var mono = '"JetBrains Mono", ui-monospace, monospace';
 
@@ -95,7 +108,7 @@
     ctx.lineCap = 'round';
     for (var i = 0; i < pts.length - 1; i++) {
       ctx.strokeStyle = C.muted; ctx.lineWidth = w + 4 - i * 2; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
-      ctx.strokeStyle = '#2c2f36'; ctx.lineWidth = w - i * 2; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
+      ctx.strokeStyle = C.link; ctx.lineWidth = w - i * 2; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
       ctx.strokeStyle = C.acc; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); ctx.stroke();
     }
     pts.forEach(function (p, i) {
@@ -176,7 +189,7 @@
         if (hit < 0 && Math.random() < .5) continue;
         pts.push({ x: jx, y: jy, o: hit, n: Math.random() });
       }
-      t0 = performance.now(); shownPoses = false; poses.innerHTML = '<span style="color:#827c74">// waiting for fit…</span>';
+      t0 = performance.now(); shownPoses = false; poses.innerHTML = '<span style="color:' + C.faint + '">// waiting for fit…</span>';
     }
     function outline(ctx, o, ox, oy, oth, fill) {
       ctx.save(); ctx.translate(o.x + ox, o.y + oy); ctx.rotate(o.th + oth); ctx.scale(k, k); ctx.beginPath();
@@ -314,7 +327,7 @@
       if (arm) runArm(now);
       // draw
       ctx.clearRect(0, 0, W, H); grid(ctx, W, H, 32);
-      var colMap = { red: '#ff5f5f', blue: C.blue, green: '#59c96b', grey: '#8d8a86', table: '#5a554f' };
+      var colMap = { red: C.red, blue: C.blue, green: C.green, grey: C.grey, table: C.table };
       cloud.forEach(function (p) {
         var isMask = p.c === 'red' || p.c === 'blue';
         if (!isMask) { ctx.globalAlpha = .35; ctx.fillStyle = colMap[p.c]; ctx.fillRect(p.x - 1, p.y - 1, 2, 2); return; }
@@ -327,7 +340,7 @@
         ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.ang);
         ctx.strokeStyle = c.ok ? C.text : C.faint; ctx.setLineDash(c.ok ? [] : [4, 4]); ctx.lineWidth = 1.4;
         var aw = px(c.a), bw = px(c.b); ctx.strokeRect(-aw / 2 - 4, -bw / 2 - 4, aw + 8, bw + 8); ctx.restore(); ctx.setLineDash([]);
-        ctx.fillStyle = c.ok ? (c.col === 'red' ? '#ff8b8b' : C.blue) : C.faint;
+        ctx.fillStyle = c.ok ? (c.col === 'red' ? C.redHi : C.blue) : C.faint;
         ctx.fillText(c.ok ? 'cube ✓' : '✗ ' + c.why, c.x - px(c.a) / 2, c.y - Math.max(px(c.a), px(c.b)) / 2 - 10);
       });
       if (target && !locked) {
@@ -340,7 +353,7 @@
       ctx.strokeStyle = C.blue; ctx.lineWidth = 2; ctx.strokeRect(bx - bs / 2, by - bs / 2, bs, bs); ctx.fillStyle = C.blue; ctx.fillText('drop · ' + picked, bx - bs / 2, by - bs / 2 - 8);
       var base = [W * .5, H * .97], L = H * .4, a = arm ? arm.p : { x: W * .5, y: H * .55 };
       var s = ik2(base[0], base[1], a.x, a.y, L, L * .95, -1);
-      if (arm && arm.carry) { ctx.fillStyle = arm.carry.color === 'red' ? '#ff5f5f' : C.blue; var cs = px(40); ctx.fillRect(s.wx - cs / 2, s.wy - cs / 2, cs, cs); }
+      if (arm && arm.carry) { ctx.fillStyle = arm.carry.color === 'red' ? C.red : C.blue; var cs = px(40); ctx.fillRect(s.wx - cs / 2, s.wy - cs / 2, cs, cs); }
       drawArm2(ctx, [base, [s.ex, s.ey], [s.wx, s.wy]], 14, Math.atan2(s.wy - s.ey, s.wx - s.ex), arm ? arm.g : 1);
       ctx.fillStyle = C.panel; ctx.strokeStyle = C.muted; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(base[0], base[1], 16, Math.PI, 0); ctx.fill(); ctx.stroke();
       // readout
@@ -348,7 +361,7 @@
       var spread = buf.length ? Math.max.apply(null, buf.map(function (b) { return mm(Math.hypot(b.x - avg(buf).x, b.y - avg(buf).y)); })) : 0;
       ro.innerHTML = '<table><tr><td>points</td><td><b>' + cloud.length + '</b></td></tr><tr><td>clusters</td><td><b>' + clusters.length + '</b> · <span class="g">' + ok + ' cube</span> · <span class="r">' + rej + ' rejected</span></td></tr>' +
         '<tr><td>buffer</td><td><b>' + (locked ? 10 : buf.length) + '/10</b> · spread <b>' + (locked ? '—' : spread.toFixed(1)) + '</b> mm</td></tr>' +
-        '<tr><td>goal</td><td>' + (locked ? '<span class="a">x ' + (mm(locked.x - W / 2) / 1000).toFixed(3) + ' y ' + (mm(H * .97 - locked.y) / 1000).toFixed(3) + ' m</span>' : '<span style="color:#827c74">waiting for stable detections</span>') + '</td></tr></table>';
+        '<tr><td>goal</td><td>' + (locked ? '<span class="a">x ' + (mm(locked.x - W / 2) / 1000).toFixed(3) + ' y ' + (mm(H * .97 - locked.y) / 1000).toFixed(3) + ' m</span>' : '<span style="color:' + C.faint + '">waiting for stable detections</span>') + '</td></tr></table>';
       setStep(arm ? 5 : locked ? 5 : target ? 4 : 3);
       S.bl.innerHTML = arm ? 'MoveIt · <b>' + arm.ph + '</b>' : locked ? 'goal locked' : target ? 'buffering detections…' : 'searching for a valid cube…';
     });
@@ -401,11 +414,11 @@
       if (!hand && now - lastPtr > 2500) { var t = now / 1000; hand = { u: 320 + Math.sin(t * .6) * 210, v: 220 + Math.sin(t * 1.1) * 120 }; autoMode = true; }
       ctx.clearRect(0, 0, W, H);
       // camera image
-      var g = ctx.createLinearGradient(0, l.iy, 0, l.iy + l.ih); g.addColorStop(0, '#2b2a28'); g.addColorStop(1, '#1f1e1c');
+      var g = ctx.createLinearGradient(0, l.iy, 0, l.iy + l.ih); g.addColorStop(0, C.camA); g.addColorStop(1, C.camB);
       ctx.fillStyle = g; ctx.fillRect(l.ix, l.iy, l.iw, l.ih); ctx.strokeStyle = C.line; ctx.strokeRect(l.ix + .5, l.iy + .5, l.iw, l.ih);
       function P(u, v) { return [l.ix + u / 640 * l.iw, l.iy + v / 480 * l.ih]; }
       // table grain
-      ctx.strokeStyle = 'rgba(255,255,255,.03)'; for (var gy = 0; gy < 480; gy += 12) { var a = P(0, gy), b = P(640, gy); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      ctx.strokeStyle = C.scan; for (var gy = 0; gy < 480; gy += 12) { var a = P(0, gy), b = P(640, gy); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
       // AprilTag
       var tg = P(tagU, tagV), ts = l.iw / 640 * 38; ctx.fillStyle = '#fff'; ctx.fillRect(tg[0] - ts / 2, tg[1] - ts / 2, ts, ts); ctx.fillStyle = '#000'; ctx.fillRect(tg[0] - ts * .38, tg[1] - ts * .38, ts * .76, ts * .76);
       ctx.fillStyle = '#fff'; [[-.2, -.2], [.1, -.2], [-.2, .1], [.15, .12], [-.05, -.05]].forEach(function (q) { ctx.fillRect(tg[0] + q[0] * ts, tg[1] + q[1] * ts, ts * .12, ts * .12); });
@@ -443,7 +456,7 @@
         ctx.setLineDash([3, 4]); ctx.strokeStyle = C.yel; ctx.beginPath(); ctx.moveTo(tg[0], tg[1]); ctx.lineTo(hp[0], hp[1]); ctx.stroke(); ctx.setLineDash([]);
       } else {
         var hx = .15 - cur.x, hy = -cur.y; cur.x += clamp(hx, -.006, .006); cur.y += clamp(hy, -.006, .006);
-        info = '<span style="color:#827c74">no fingertip detected → returning home</span>';
+        info = '<span style="color:' + C.faint + '">no fingertip detected → returning home</span>';
         ctx.fillStyle = C.faint; ctx.fillText('move your pointer here', l.ix + 14, l.iy + 22);
       }
       ro.innerHTML = info; setStep(hand ? 4 : 0);
@@ -516,13 +529,13 @@
     S.onResize = build;
     register(S, function () {
       var ctx = S.ctx, W = S.W, H = S.H;
-      var sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#2a3a2a'); sky.addColorStop(1, '#1b261b'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
-      leaves.forEach(function (l) { ctx.fillStyle = l.c < .5 ? '#2f5a2c' : '#3f7436'; ctx.beginPath(); ctx.ellipse(l.x, l.y, l.rx, l.ry, l.a, 0, Math.PI * 2); ctx.fill(); });
+      var sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, C.skyA); sky.addColorStop(1, C.skyB); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      leaves.forEach(function (l) { ctx.fillStyle = l.c < .5 ? C.leafA : C.leafB; ctx.beginPath(); ctx.ellipse(l.x, l.y, l.rx, l.ry, l.a, 0, Math.PI * 2); ctx.fill(); });
       gts.forEach(function (g) {
         var gr = ctx.createRadialGradient(g.cx - g.r * .35, g.cy - g.r * .35, g.r * .1, g.cx, g.cy, g.r);
         gr.addColorStop(0, g.red ? '#ff8a7a' : '#f7e36a'); gr.addColorStop(1, g.red ? '#b3222a' : '#b8a32a');
         ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(g.cx, g.cy, g.r, 0, Math.PI * 2); ctx.fill();
-        if (g.occ) { ctx.fillStyle = '#356630'; ctx.beginPath(); ctx.ellipse(g.cx + g.r * .5, g.cy - g.r * .2, g.r * (.6 + g.occ), g.r * .7, .6, 0, Math.PI * 2); ctx.fill(); }
+        if (g.occ) { ctx.fillStyle = C.leafOcc; ctx.beginPath(); ctx.ellipse(g.cx + g.r * .5, g.cy - g.r * .2, g.r * (.6 + g.occ), g.r * .7, .6, 0, Math.PI * 2); ctx.fill(); }
       });
       var res = match(iou, conf), tp = 0, fp = 0;
       font(ctx, Math.max(9, W / 100));
@@ -535,7 +548,7 @@
       var fn = gts.length - tp, P = tp + fp ? tp / (tp + fp) : 1, R = tp / gts.length;
       // PR inset
       var iw = W * .3, ih = H * .3, ix = W - iw - 14, iy = H - ih - 14, cur = ap[iou];
-      ctx.fillStyle = 'rgba(16,17,20,.88)'; ctx.fillRect(ix, iy, iw, ih); ctx.strokeStyle = C.line; ctx.strokeRect(ix + .5, iy + .5, iw, ih);
+      ctx.fillStyle = C.inset; ctx.fillRect(ix, iy, iw, ih); ctx.strokeStyle = C.line; ctx.strokeRect(ix + .5, iy + .5, iw, ih);
       ctx.fillStyle = C.faint; ctx.fillText('precision–recall · IoU ' + iou.toFixed(2), ix + 8, iy + 14);
       var px0 = ix + 26, py0 = iy + ih - 18, pw = iw - 38, ph = ih - 40;
       ctx.strokeStyle = C.line; ctx.beginPath(); ctx.moveTo(px0, py0 - ph); ctx.lineTo(px0, py0); ctx.lineTo(px0 + pw, py0); ctx.stroke();
@@ -545,7 +558,7 @@
       ctx.fillStyle = C.faint; ctx.fillText('R', px0 + pw - 8, py0 + 12); ctx.fillText('P', ix + 10, py0 - ph + 8);
       var m5095 = 0; for (var k in ap) m5095 += ap[k].ap; m5095 /= 10;
       ro.innerHTML = '<table><tr><td>apples counted</td><td><b>' + (tp + fp) + '</b> (true: ' + gts.length + ')</td></tr>' +
-        '<tr><td>TP · FP · missed</td><td><span class="g">' + tp + '</span> · <span class="r">' + fp + '</span> · <span style="color:#ffc23d">' + fn + '</span></td></tr>' +
+        '<tr><td>TP · FP · missed</td><td><span class="g">' + tp + '</span> · <span class="r">' + fp + '</span> · <span style="color:' + C.yel + '">' + fn + '</span></td></tr>' +
         '<tr><td>precision</td><td><b>' + P.toFixed(3) + '</b></td></tr><tr><td>recall</td><td><b>' + R.toFixed(3) + '</b></td></tr>' +
         '<tr><td>AP @ 0.50</td><td class="a">' + ap[.5].ap.toFixed(3) + '</td></tr><tr><td>AP @ 0.75</td><td class="a">' + ap[.75].ap.toFixed(3) + '</td></tr>' +
         '<tr><td>AP @ 0.50–0.95</td><td class="a">' + m5095.toFixed(3) + '</td></tr></table>';
@@ -602,10 +615,10 @@
       function V(p) { return [ox + p[0] * sc, oy - p[1] * sc]; }
       ctx.clearRect(0, 0, W, H); grid(ctx, W, vh, sc / 2);
       ctx.strokeStyle = C.line; ctx.beginPath(); ctx.moveTo(0, oy); ctx.lineTo(W, oy); ctx.moveTo(ox, 0); ctx.lineTo(ox, vh); ctx.stroke();
-      ctx.setLineDash([4, 5]); ctx.strokeStyle = 'rgba(61,220,132,.5)'; var a1 = V([2, -1]), a2 = V([2, 1]); ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.setLineDash([4, 5]); ctx.strokeStyle = C.safe; var a1 = V([2, -1]), a2 = V([2, 1]); ctx.beginPath(); ctx.moveTo(a1[0], a1[1]); ctx.lineTo(a2[0], a2[1]); ctx.stroke(); ctx.setLineDash([]);
       ctx.strokeStyle = C.line; ctx.setLineDash([2, 5]); ctx.beginPath(); ctx.arc(ox, oy, 3 * sc, -Math.PI / 2, Math.PI / 2); ctx.stroke(); ctx.setLineDash([]);
       if (obst) {
-        var oc = V([O.x, O.y]); ctx.fillStyle = 'rgba(255,95,95,.18)'; ctx.strokeStyle = 'rgba(255,95,95,.6)'; ctx.setLineDash([4, 4]);
+        var oc = V([O.x, O.y]); ctx.fillStyle = C.obsF; ctx.strokeStyle = C.obsS; ctx.setLineDash([4, 4]);
         ctx.beginPath(); ctx.arc(oc[0], oc[1], 2 * O.r * sc, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
         ctx.fillStyle = C.red; ctx.beginPath(); ctx.arc(oc[0], oc[1], O.r * sc, 0, Math.PI * 2); ctx.fill();
         font(ctx, Math.max(9, W / 95)); ctx.fillText('obstacle · safe zone 2r', oc[0] + 2 * O.r * sc + 6, oc[1] + 4);
@@ -616,14 +629,14 @@
       var tr = V([held.x, held.y]); ctx.fillStyle = C.green; ctx.beginPath(); ctx.arc(tr[0], tr[1], 7, 0, Math.PI * 2); ctx.fill();
       var cm = repel(held); if (cm !== held) { var cv = V([cm.x, cm.y]); ctx.strokeStyle = C.yel; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cv[0], cv[1], 8, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(tr[0], tr[1]); ctx.lineTo(cv[0], cv[1]); ctx.stroke(); ctx.setLineDash([]); }
       // error plot
-      ctx.fillStyle = '#121316'; ctx.fillRect(0, vh, W, plotH); ctx.strokeStyle = C.line; ctx.beginPath(); ctx.moveTo(0, vh + .5); ctx.lineTo(W, vh + .5); ctx.stroke();
+      ctx.fillStyle = C.plot; ctx.fillRect(0, vh, W, plotH); ctx.strokeStyle = C.line; ctx.beginPath(); ctx.moveTo(0, vh + .5); ctx.lineTo(W, vh + .5); ctx.stroke();
       var mx = Math.max(.2, Math.max.apply(null, errs)); ctx.strokeStyle = C.acc; ctx.lineWidth = 1.6; ctx.beginPath();
       errs.forEach(function (e, i) { var x = 50 + i / 300 * (W - 64), y = vh + plotH - 10 - e / mx * (plotH - 26); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
       font(ctx, Math.max(9, W / 95)); ctx.fillStyle = C.faint; ctx.fillText('|ee − target|', 8, vh + 16); ctx.fillText(mx.toFixed(2) + ' L', 8, vh + 30); ctx.fillText('last 6 s', W - 60, vh + 16);
       var e = errs[errs.length - 1] || 0, rms = Math.sqrt(errs.reduce(function (a, b) { return a + b * b; }, 0) / (errs.length || 1));
       ro.innerHTML = '<table><tr><td>error now</td><td><b>' + e.toFixed(3) + '</b> L</td></tr><tr><td>RMS (6 s)</td><td class="a">' + rms.toFixed(3) + ' L</td></tr>' +
         '<tr><td>θ1 θ2 θ3</td><td>' + th.map(function (t) { return (wrap(t) * 180 / Math.PI).toFixed(0) + '°'; }).join(' ') + '</td></tr></table>';
-      S.bl.innerHTML = '<span style="color:#3ddc84">●</span> target <span style="color:#4cc6ff">●</span> end-effector' + (obst ? ' <span style="color:#ffc23d">○</span> repelled' : '');
+      S.bl.innerHTML = '<span style="color:' + C.green + '">●</span> target <span style="color:' + C.blue + '">●</span> end-effector' + (obst ? ' <span style="color:' + C.yel + '">○</span> repelled' : '');
     });
   };
 

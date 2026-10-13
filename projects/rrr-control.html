@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>try{document.documentElement.setAttribute("data-theme",localStorage.getItem("theme-v2")||"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}</script>
 <link rel="stylesheet" href="../assets/deck.css">
 <link rel="stylesheet" href="../assets/demos.css">
 </head>
@@ -16,7 +17,7 @@
 
 <section class="slide title" data-title="Title">
   <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
-  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" class="em-s0"/><stop offset="1" class="em-s1"/></radialGradient>
   <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
   <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
   <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
