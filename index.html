@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sowmiya Jeromiah — Robotics Engineer</title>
-<meta name="description" content="Robotics engineer working on perception-driven manipulation: ROS 2, MoveIt 2, 3D vision and deep learning.">
+<title>Sowmiya Jeromiah — Robotics Software Engineer</title>
+<meta name="description" content="Robotics software engineer working on perception-driven manipulation: ROS 2, MoveIt 2, 3D vision and deep learning.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -482,7 +482,7 @@
       <h1>Robots that <span class="grad">see, plan</span> &amp; recover.</h1>
       <div class="role mono"><span id="typed"></span><span class="cursor"></span></div>
       <p class="lede">
-        I'm Sowmiya, a robotics engineer working on vision-guided manipulation. My work spans RGB-D perception,
+        I'm Sowmiya, a robotics software engineer working on vision-guided manipulation. My work spans RGB-D perception,
         6-DoF pose estimation and motion planning with ROS&nbsp;2 and MoveIt&nbsp;2, on real arms and in simulation.
       </p>
       <div class="cta">
@@ -729,9 +729,9 @@
 
 <div id="term" role="dialog" aria-label="Terminal">
   <div class="term-win">
-    <div class="term-bar"><i id="termClose" title="close"></i><i></i><i></i><span>sowmiya@bristol: ~/portfolio — ros2 jazzy</span></div>
+    <div class="term-bar"><i id="termClose" title="close"></i><i></i><i></i><span>sowSH — the Sowmiya shell</span></div>
     <div class="term-out" id="termOut"></div>
-    <label class="term-in"><span>❯</span><input id="termIn" autocomplete="off" spellcheck="false" aria-label="Terminal input"></label>
+    <label class="term-in"><span>sowSH ❯</span><input id="termIn" autocomplete="off" spellcheck="false" aria-label="Terminal input"></label>
   </div>
 </div>
 
@@ -771,11 +771,11 @@
   }
 
   /* ---------- theme ---------- */
-  try { var t = localStorage.getItem('theme'); if (t) root.setAttribute('data-theme', t); } catch (e) {}
+  try { var t = localStorage.getItem('theme-v2'); root.setAttribute('data-theme', t || 'light'); } catch (e) {}
   document.getElementById('theme').addEventListener('click', function () {
     var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     root.setAttribute('data-theme', next);
-    try { localStorage.setItem('theme', next); } catch (e) {}
+    try { localStorage.setItem('theme-v2', next); } catch (e) {}
   });
   document.getElementById('yr').textContent = new Date().getFullYear();
 
@@ -789,7 +789,7 @@
   addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
   /* ---------- typed role ---------- */
-  var roles = ['> robotics engineer', '> perception & manipulation', '> ROS 2 · MoveIt 2 · 3D vision', '> MSc Robotics, Bristol'];
+  var roles = ['> robotics software engineer', '> perception & manipulation', '> ROS 2 · MoveIt 2 · 3D vision', '> MSc Robotics, Bristol'];
   var el = document.getElementById('typed'), ri = 0, ci = 0, del = false;
   function type() {
     var s = roles[ri];
@@ -1148,7 +1148,7 @@
           ['sudo hire sowmiya', '¯\\_(ツ)_/¯'], ['clear', ''], ['exit', 'close terminal']
         ].map(function (r) { return '  ' + r[0] + '                          '.slice(r[0].replace(/&[lg]t;/g, '.').length) + '<span class="d">' + r[1] + '</span>'; }).join('\n');
       },
-      whoami: function () { return 'Sowmiya Jeromiah\nrobotics engineer · perception &amp; manipulation\nMSc Robotics Engineering — University of Bristol &amp; UWE\n<span class="d">location: Bristol, UK · status: open to roles</span>'; },
+      whoami: function () { return 'Sowmiya Jeromiah\nrobotics software engineer · perception &amp; manipulation\nMSc Robotics Engineering — University of Bristol &amp; UWE\n<span class="d">location: Bristol, UK · status: open to roles</span>'; },
       projects: function () { return projects.map(function (p, i) { return '<span class="p">' + String(i + 1).padStart(2, '0') + '</span> ' + p[0] + '                    '.slice(p[0].length) + '<span class="d">' + p[1] + '</span>'; }).join('\n') + '\n<span class="d">try: open visionNassembly</span>'; },
       ls: function () { return cmds.projects(); },
       skills: function () { return '<span class="c">robotics</span>    ROS 2 · MoveIt 2 · Gazebo · MuJoCo · TF2 · ros2_control · LeRobot\n<span class="c">perception</span>  RGB-D · point clouds · 6-DoF pose · Open3D · OpenCV · SAM 2 · YOLO\n<span class="c">ml</span>          PyTorch · TensorFlow · Keras · RL\n<span class="c">eng</span>         Python · C++ · Docker · Linux · Git · CUDA'; },
@@ -1181,7 +1181,7 @@
     }
     function open() {
       term.classList.add('open');
-      if (!greeted) { greeted = true; print('<span class="d">ros2 jazzy · portfolio shell — type</span> <span class="c">help</span> <span class="d">to start</span>'); }
+      if (!greeted) { greeted = true; print('<span class="d">welcome to</span> <span class="c">sowSH</span><span class="d">, the Sowmiya shell · type</span> <span class="c">help</span> <span class="d">to start</span>'); }
       setTimeout(function () { inp.focus(); }, 30);
     }
     function close() { term.classList.remove('open'); }

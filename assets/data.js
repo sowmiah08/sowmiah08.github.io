@@ -11,7 +11,7 @@
  */
 window.PORTFOLIO = {
   name: 'Sowmiya Jeromiah',
-  role: 'Robotics Engineer',
+  role: 'Robotics Software Engineer',
   location: 'Bristol, UK',
 
   links: {
