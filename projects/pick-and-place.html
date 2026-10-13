@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dual-arm pick &amp; place — presentation · Sowmiya Jeromiah</title>
+<meta name="description" content="Presentation: autonomous dual-arm pick-and-place on real SO-101 hardware with a RealSense point cloud, HSV + DBSCAN perception, TF routing and MoveIt 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../assets/demos.css">
+</head>
+<body data-deck="Dual-arm pick &amp; place">
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title" data-title="Title">
+  <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
+  <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
+  <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
+  <g class="em-spin-rev"><text class="em-ring"><textPath href="#emring" textLength="515" lengthAdjust="spacing">DUAL-ARM · PICK & PLACE · SO-101 · DUAL-ARM · PICK & PLACE · SO-101 · </textPath></text></g>
+  <g class="em-icon">
+  <path d="M58 138h84" class="em-faint"/>
+  <g class="em-armL"><path d="M66 138 L74 104 L92 92"/><circle cx="66" cy="138" r="4" class="em-fill"/><circle cx="74" cy="104" r="3.5" class="em-fill"/><path d="M92 92l4 -5M92 92l5 3" class="em-acc"/></g>
+  <g class="em-armR"><path d="M134 138 L126 104 L108 92"/><circle cx="134" cy="138" r="4" class="em-fill"/><circle cx="126" cy="104" r="3.5" class="em-fill"/><path d="M108 92l-4 -5M108 92l-5 3" class="em-acc"/></g>
+  <g class="em-bob"><rect x="92" y="110" width="16" height="16" rx="2" class="em-cube"/></g>
+  </g>
+</svg>
+  <div class="kicker">Project presentation · real hardware</div>
+  <h1>Dual-arm pick &amp; place on SO-101</h1>
+  <p class="lead">One RealSense camera, two real SO-101 arms. A classical point-cloud pipeline finds coloured cubes, a <b>TF router</b> decides which arm should pick each one, and each arm runs an asynchronous <b>MoveIt 2</b> state machine that grasps, lifts and drops the cube in a bin.</p>
+  <div class="who"><p><b>Sowmiya Jeromiah</b> · Robotics Engineer</p><div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">MoveIt 2</span><span class="tag">RealSense</span><span class="tag">Open3D</span><span class="tag">Feetech STS3215</span></div></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Demo">
+  <div class="kicker">Demo</div>
+  <div class="cols-21 fill">
+    <div class="vid"><video data-src="../media/pick-and-place.mp4" poster="../media/pick-and-place.jpg" muted loop playsinline></video></div>
+    <div class="center">
+      <h2 style="font-size:50px">What you're seeing</h2>
+      <ul class="bul">
+        <li><b>RViz</b>: the live RealSense point cloud with the MoveIt plan</li>
+        <li><b>Camera view</b>: the real arm reaching the cube</li>
+        <li>At the end, the <b>system architecture</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Live demo">
+  <div class="kicker">Live demo</div>
+  <h2 style="margin-bottom:24px">Interactive: point cloud → DBSCAN → pick</h2>
+  <div class="demo-mount fill" data-demo="cubes"></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Architecture">
+  <div class="kicker">Architecture</div>
+  <h2>One camera, routed to two arms</h2>
+  <div class="pipe">
+    <div class="st hw"><i>sensor</i><b>RealSense</b><span>RGB-D point cloud</span></div><div class="ar">→</div>
+    <div class="st"><i>cube_detector.py</i><b>Detect</b><span>HSV → DBSCAN → cube filter</span></div><div class="ar">→</div>
+    <div class="st hot"><i>tf_node.py</i><b>Route</b><span>right_base_link · y &gt; 0.15 → left</span></div><div class="ar">→</div>
+    <div class="st"><i>pick_nd_place(_left).py</i><b>State machines</b><span>one per arm</span></div><div class="ar">→</div>
+    <div class="st"><i>move_group</i><b>MoveIt 2</b><span>KDL IK · 2 planning groups</span></div><div class="ar">→</div>
+    <div class="st hw"><i>right/left_bridge.py</i><b>Servos</b><span>/dev/ttyACM1 · ACM2</span></div>
+  </div>
+  <div class="cols-2 mt2">
+    <div class="box"><h3>Async everywhere</h3><p>Everything after the point cloud is asynchronous ROS 2 callback chains, with <b>no blocking <code>time.sleep()</code></b>. A sleep in a callback stalls unrelated topics such as <code>/joint_states</code>, which MoveIt needs.</p></div>
+    <div class="box"><h3>One shared planning scene</h3><p>The SRDF defines two base→jaw planning groups, with generated disable-collision pairs so neighbouring links aren't treated as permanently colliding.</p></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Perception">
+  <div class="kicker">Perception · three design decisions</div>
+  <h2>Point cloud → "a cube at (x, y, z)"</h2>
+  <div class="cols-3">
+    <div class="box hot"><span class="num">01 · HSV, NOT RGB</span><p>Hue separates colour from brightness, so thresholds survive lighting changes. Red: h &lt; 10 or &gt; 170. Blue: 100 &lt; h &lt; 140.</p></div>
+    <div class="box"><span class="num">02 · MASK, THEN DBSCAN</span><p>Cluster only the colour-masked points: <b>eps = 2 cm</b>, min 30 points. No need to know how many cubes are present, and sparse noise is dropped.</p></div>
+    <div class="box"><span class="num">03 · SHAPE FILTER</span><p><code>_is_cube_like</code>: every axis <b>3 ± 1.5 cm</b>. It rejects elongated (&gt; 6 cm, wires) and flat (&lt; 1.5 cm, glare) clusters.</p></div>
+  </div>
+  <div class="box cool mt"><h3>Known limitation</h3><p>Two touching same-colour cubes merge into one oversized cluster, fail the size filter and are <b>silently dropped</b>: a false negative, not a crash. This is classical CV that works because the task is constrained (known size, colours, static camera).</p></div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Dual-arm routing">
+  <div class="kicker">The dual-arm decision</div>
+  <h2>Which arm picks this cube?</h2>
+  <div class="cols-12 fill">
+    <div class="center">
+<pre style="font:400 22px/1.7 var(--mono);background:#111216;border:1px solid var(--border);border-radius:14px;padding:22px 26px;color:#e8e4de;margin:0">p = transform(cube, "right_base_link")
+<span style="color:#ff8a2b">if</span> p.y &gt; 0.15:          <span style="color:#8a847c"># metres</span>
+    publish(transform(cube, "left_base_link"),
+            "/cube_left_base")
+<span style="color:#ff8a2b">else</span>:
+    publish(p, "/cube_right_base")</pre>
+    </div>
+    <div class="center" style="gap:20px">
+      <div class="box"><h3>Why it's good</h3><p>Cheap and deterministic. One detector feeds both arms, and no per-arm perception is needed.</p></div>
+      <div class="box cool"><h3>What it isn't</h3><p>A <b>proxy</b> for reachability, not a guarantee. A cube near y ≈ 0.15 can be routed to an arm that can't reach it, and there's no fallback to the other arm.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Pick state machine">
+  <div class="kicker">Motion</div>
+  <h2>An async pick state machine</h2>
+  <div class="pipe">
+    <div class="st"><i>buffer</i><b>10 detections</b><span>average → lock</span></div><div class="ar">→</div>
+    <div class="st"><i>MoveGroup</i><b>Grasp</b><span>hover z + 0.1 m</span></div><div class="ar">→</div>
+    <div class="st"><i>gripper</i><b>Close</b><span>3 s</span></div><div class="ar">→</div>
+    <div class="st"><i>MoveGroup</i><b>Lift</b><span>+0.20 m</span></div><div class="ar">→</div>
+    <div class="st hot"><i>joint traj</i><b>Bin</b><span>fixed taught pose</span></div><div class="ar">→</div>
+    <div class="st"><i>joint traj</i><b>Home</b><span>unlock, clear</span></div>
+  </div>
+  <div class="cols-3 mt2">
+    <div class="box"><span class="num">BUFFER + LOCK</span><p>Averaging 10 centroids stops the arm twitching. A <code>busy/locked</code> guard stops a new detection re-entering mid-sequence.</p></div>
+    <div class="box"><span class="num">HYBRID PLANNING</span><p>Grasp and lift use collision-aware MoveGroup goals (dynamic target). The bin move is a raw joint trajectory (fixed, pre-validated target).</p></div>
+    <div class="box"><span class="num">STATE-AWARE FAILURE</span><p>A failed grasp unlocks and restarts. A failed lift <b>opens the gripper and goes home</b>, since it may be holding a cube.</p></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="MoveIt & hardware">
+  <div class="kicker">MoveIt goals · real hardware</div>
+  <h2>Constraints, drift, and the servo bridge</h2>
+  <div class="cols-2">
+    <div class="box hot"><h3>Goals as constraints</h3><ul class="bul" style="gap:10px">
+      <li class="small"><b>5 cm box</b> around the jaw-link target, because asking for more precision than the camera gives only makes planning fail</li>
+      <li class="small">Top-down <code>[0, −0.707, 0, 0.707]</code>: <b>0.3 rad</b> tolerance for grasp, <b>0.5 rad</b> for lift and bin</li></ul></div>
+    <div class="box"><h3>The CONTROL_FAILED bug</h3><p>After the gripper closed, the arm joints drifted slightly and MoveIt rejected the lift. Fix: <code>is_diff = True</code> plus <code>allowed_start_tolerance: 0.0</code>, which trusts the live state. That's a deliberate, scoped trade-off.</p></div>
+  </div>
+  <div class="box cool mt"><h3>Servo bridge</h3><p><code>FollowJointTrajectory</code> becomes Feetech serial writes: ticks 0–4095 ↔ [−π, π), per-joint calibration offsets (measured on the right arm), and joint states published at 20 Hz.</p></div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Status, limits & next">
+  <div class="kicker">Honest status</div>
+  <h2>Where it stands</h2>
+  <div class="cols-2">
+    <div><h3>Done</h3><ul class="bul check">
+      <li>Right arm: the full detect → grasp → lift → <b>bin</b> → home cycle</li>
+      <li>Dual-arm software path: routing, two planning groups, both state machines</li>
+      <li>CONTROL_FAILED drift bug found and fixed</li>
+      <li>Planning success improved with tolerance tuning</li></ul></div>
+    <div><h3>Next</h3><ul class="bul">
+      <li><b>Calibrate the left arm</b> (offsets are 0, bin pose is a placeholder)</li>
+      <li>Reachability-aware routing with fallback to the other arm</li>
+      <li>Retry limits, grasp-contact sensing, a serial-port lock</li>
+      <li>Cubes as collision objects, so the planning scene knows about them</li></ul></div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/demos.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

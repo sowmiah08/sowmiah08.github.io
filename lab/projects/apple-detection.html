@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple Detection — Sowmiya Jeromiah</title>
+<meta name="description" content="Apple detection and counting for orchard yield estimation with YOLOv8 and YOLO11 on MinneApple, Kaggle and custom data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/project.css">
+<style>
+  .gallery { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: start; }
+  .gallery .stack { display: grid; gap: 18px; }
+  .gallery .tall img { max-height: 760px; object-fit: cover; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .metrics > div { padding: 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+  .metrics b { display: block; font: 700 34px/1.1 Inter; color: var(--accent); }
+  .metrics span { font: 400 12px "JetBrains Mono"; color: var(--muted); }
+  .bar { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--violet)); border-radius: inherit; }
+  @media (max-width: 860px) { .gallery { grid-template-columns: 1fr; } .metrics { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="wrap">
+    <a class="back" href="../index.html#work">← all projects</a>
+    <div class="nav-r">
+      <button class="pbtn hot" data-present title="Present this project as slides (P)">▶ <span class="lbl">Present</span></button>
+      <a class="pbtn" href="https://github.com/sowmiah08/Apple-Detection-Machine-Vision" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero" data-slide>
+  <div class="wrap">
+    <div class="crumb">Case study · Agri-robotics · Deep learning</div>
+    <h1>Apple detection for yield estimation</h1>
+    <p class="pstatus"><i></i>Completed · trained &amp; exported to ONNX</p>
+    <p class="tagline">Automating apple detection and counting in orchards with machine vision and deep learning, for better yield estimation in precision agriculture. I built the data pipeline, then trained and compared YOLOv8 and YOLO11 detectors.</p>
+    <div class="tags"><span class="tag">YOLO11s</span><span class="tag">YOLOv8s</span><span class="tag">Ultralytics</span><span class="tag">PyTorch</span><span class="tag">OpenCV</span><span class="tag">ONNX</span><span class="tag">Google Colab</span><span class="tag">Roboflow</span></div>
+    <div class="glance">
+      <div><b>0.853</b><span>mAP50 (YOLO11s, val)</span></div>
+      <div><b>6,172</b><span>apples in 318 val images</span></div>
+      <div><b>4.4 ms</b><span>inference per image (GPU)</span></div>
+      <div><b>3</b><span>datasets combined</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">01 / RESULTS IN THE WILD</div>
+    <h2>What the detector sees</h2>
+    <div class="gallery">
+      <figure class="reveal tall"><img src="../../media/apple-orchard.jpg" alt="Orchard scene with dozens of yellow apples each enclosed in a blue detection box"><figcaption>Dense orchard scene: many small, overlapping apples, each detected individually</figcaption></figure>
+      <div class="stack">
+        <figure class="reveal"><img src="../../media/apple-detect-1.jpg" alt="Original apple image next to YOLO detection result with confidence-labelled boxes"><figcaption>Original vs. detection, with per-apple confidence</figcaption></figure>
+        <figure class="reveal"><img src="../../media/apple-detect-2.jpg" alt="Cluster of red apples, original and with detection boxes including partly hidden apples"><figcaption>Clusters and partly hidden apples, including small ones in the background</figcaption></figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">02 / THE DATA PIPELINE</div>
+    <h2>Most of the work is the data</h2>
+    <div class="flow">
+      <div class="st reveal"><div><h3>Collect &amp; combine</h3><p>Three sources were merged for robustness: the <b>MinneApple</b> benchmark, a <b>Kaggle</b> apple dataset, and a <b>custom set annotated in Roboflow</b>.</p><div class="io">MinneApple + Kaggle + custom → final_data/</div></div></div>
+      <div class="st reveal"><div><h3>Masks → YOLO boxes</h3><p>MinneApple ships segmentation masks, not boxes. For each mask I find the outer contours (<code>RETR_EXTERNAL</code>, <code>CHAIN_APPROX_SIMPLE</code>), take each contour's bounding rectangle, and write it as a normalised YOLO label (class 0, centre x/y, width, height).</p><div class="io">mask.png → cv2.findContours → boundingRect → label.txt</div></div></div>
+      <div class="st reveal"><div><h3>COCO → YOLO</h3><p>Ground truth in COCO JSON is converted to YOLO format: top-left boxes become normalised centre boxes, one label file per image.</p><div class="io">ground_truth.json → *.txt</div></div></div>
+      <div class="st reveal"><div><h3>Split &amp; verify</h3><p>Images are split into train and validation sets, and every image is checked for a matching label (and every label for an image) before training.</p><div class="io">2,198 train · 318 val images</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">03 / TRAINING</div>
+    <h2>Two detectors, same task</h2>
+    <div class="two">
+      <div class="card reveal">
+        <h3 style="margin-top:0">YOLOv8s</h3>
+        <ul class="ck"><li>Pretrained <code>yolov8s.pt</code>, fine-tuned</li><li><b>50 epochs</b>, batch 16, 640×640</li><li>Compared a <b>MinneApple-only</b> model with the <b>combined-dataset</b> model on the same test image</li></ul>
+      </div>
+      <div class="card reveal">
+        <h3 style="margin-top:0">YOLO11s</h3>
+        <ul class="ck"><li>Pretrained <code>yolo11s.pt</code>: 238 layers, 9.4 M params, 21.3 GFLOPs</li><li><b>50 epochs</b>, batch 36, 640×640, about 1.4 h on GPU</li><li>Validated, then <b>exported to ONNX</b> for CPU inference</li></ul>
+      </div>
+    </div>
+<pre class="reveal" style="margin-top:18px"><span class="c"># YOLO11 training (Ultralytics)</span>
+model = YOLO("yolo11s.pt")
+model.train(data="data.yaml", epochs=50, imgsz=640, batch=36, name="apple_detection")
+model.val()
+model.export(format="onnx")
+
+<span class="c"># deployment: ONNX on CPU, confidence 0.5</span>
+YOLO("best.onnx").predict(source=frame, conf=0.5, device="cpu")</pre>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">04 / RESULTS</div>
+    <h2>YOLO11s on the validation set</h2>
+    <div class="metrics">
+      <div class="reveal"><b>0.822</b><span>precision</span><div class="bar"><i style="width:82.2%"></i></div></div>
+      <div class="reveal"><b>0.754</b><span>recall</span><div class="bar"><i style="width:75.4%"></i></div></div>
+      <div class="reveal"><b>0.853</b><span>mAP@50</span><div class="bar"><i style="width:85.3%"></i></div></div>
+      <div class="reveal"><b>0.495</b><span>mAP@50–95</span><div class="bar"><i style="width:49.5%"></i></div></div>
+    </div>
+    <p class="lead" style="margin-top:18px">318 validation images with <b>6,172 annotated apples</b>, about 19 per image. Speed: 0.5 ms pre-processing, 4.4 ms inference and 6.2 ms post-processing per image. mAP@50–95 is much lower than mAP@50 because apples are small and tightly clustered, so getting boxes pixel-tight is hard even when every apple is found.</p>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">05 / NEXT STEPS</div>
+    <h2>How I'd push it further</h2>
+    <div class="two">
+      <div class="card reveal"><h3 style="margin-top:0">Improve the model</h3><ul class="ck">
+        <li>Add <b>more annotated images</b>, especially dense clusters</li>
+        <li>Train for <b>more epochs</b> and tune hyperparameters</li>
+        <li>Try <b>larger variants</b> (m / l) where GPU allows</li></ul></div>
+      <div class="card reveal"><h3 style="margin-top:0">Ideas: towards a robot</h3><ul class="ck">
+        <li>Run the <b>ONNX</b> model on a field robot's camera</li>
+        <li>Track apples across frames, so each one is <b>counted once</b> along a row</li>
+        <li>Add depth to give every apple a <b>3D position</b> for picking</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">06 / HOW I EXPLAIN IT</div>
+    <h2>Talking points</h2>
+    <div class="explain reveal">
+      <p class="pitch">"Farmers estimate yield by counting fruit, which is slow by hand. I trained YOLO detectors to find and count apples in orchard images. Most of the work was the data: I combined three datasets, converted MinneApple's segmentation masks and COCO annotations into YOLO boxes, and checked every image–label pair. YOLO11s reached 0.85 mAP@50 on about 6,000 validation apples, at under 5 ms per image, and I exported it to ONNX for CPU deployment."</p>
+      <p class="pitch-note">// 30-second pitch</p>
+      <div class="beats">
+        <div><b>1 · DATA</b><p>3 datasets → masks &amp; COCO converted to YOLO → verified pairs.</p></div>
+        <div><b>2 · TRAIN</b><p>Fine-tune YOLOv8s and YOLO11s, 50 epochs at 640 px.</p></div>
+        <div><b>3 · DEPLOY</b><p>0.853 mAP50, 4.4 ms per image, exported to ONNX.</p></div>
+      </div>
+      <details><summary>How did you turn segmentation masks into boxes?</summary><p>For each mask, OpenCV finds the external contours, so nested holes are ignored. Each contour's bounding rectangle becomes a box, normalised by the image size into YOLO's centre-x, centre-y, width, height format with class 0 for apple.</p></details>
+      <details><summary>Why combine datasets?</summary><p>One dataset has one orchard, one camera and one lighting condition. Mixing MinneApple, Kaggle and my own Roboflow annotations gives more variety, so the model generalises better. I compared a MinneApple-only model against the combined model to check that.</p></details>
+      <details><summary>Why is mAP@50–95 so much lower than mAP@50?</summary><p>mAP@50 counts a detection as correct when its box overlaps the true box by at least 50%. mAP@50–95 averages over much stricter overlaps, up to 95%. Apples are small and clustered, so finding them is easier than getting every box pixel-perfect.</p></details>
+      <details><summary>Why export to ONNX?</summary><p>ONNX decouples the model from the training framework. The same weights can run on CPU, or through optimised runtimes on edge hardware such as a robot's onboard computer, without the full training stack.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap next">
+  <a href="rrr-control.html"><small>← previous</small><span>RRR end-effector control</span></a>
+  <a class="r" href="visionnassembly.html"><small>back to start →</small><span>visionNassembly</span></a>
+</div>
+<footer><div class="wrap">© Sowmiya Jeromiah · Datasets: MinneApple (Häni, Roy &amp; Isler, 2019), Kaggle, custom Roboflow annotations · press <b>P</b> to present</div></footer>
+<script src="../assets/project.js"></script>
+</body>
+</html>

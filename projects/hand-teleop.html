@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hand-guided teleoperation — presentation · Sowmiya Jeromiah</title>
+<meta name="description" content="Presentation: real-time teleoperation of a 5-DOF SO-ARM101 from MediaPipe hand tracking, RealSense depth, a static AprilTag calibration and LeRobot IK, with layered safety.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../assets/demos.css">
+</head>
+<body data-deck="Hand-guided teleoperation">
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title" data-title="Title">
+  <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
+  <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
+  <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
+  <g class="em-spin-rev"><text class="em-ring"><textPath href="#emring" textLength="515" lengthAdjust="spacing">HAND-GUIDED · TELEOPERATION · REAL TIME · HAND-GUIDED · TELEOPERATION · REAL TIME · </textPath></text></g>
+  <g class="em-icon">
+  <path d="M100 140 L84 128 L74 116 L68 106 M100 140 L90 110 L88 94 L87 82 L86 72 M100 140 L100 108 L100 90 L100 78 L100 68 M100 140 L110 110 L112 94 L113 84 L114 76 M100 140 L118 116 L122 104 L124 96 L126 90 M84 128 L90 110 L100 108 L110 110 L118 116"/>
+  <g class="em-faint-dots"><circle cx="100" cy="140" r="2.6"/><circle cx="84" cy="128" r="2.2"/><circle cx="74" cy="116" r="2.2"/><circle cx="68" cy="106" r="2.2"/><circle cx="90" cy="110" r="2.2"/><circle cx="88" cy="94" r="2.2"/><circle cx="87" cy="82" r="2.2"/><circle cx="100" cy="108" r="2.2"/><circle cx="100" cy="90" r="2.2"/><circle cx="100" cy="78" r="2.2"/><circle cx="100" cy="68" r="2.2"/><circle cx="110" cy="110" r="2.2"/><circle cx="112" cy="94" r="2.2"/><circle cx="113" cy="84" r="2.2"/><circle cx="114" cy="76" r="2.2"/><circle cx="118" cy="116" r="2.2"/><circle cx="122" cy="104" r="2.2"/><circle cx="124" cy="96" r="2.2"/><circle cx="126" cy="90" r="2.2"/></g>
+  <circle cx="86" cy="72" r="4" class="em-cube"/><circle cx="86" cy="72" r="6" class="em-ping"/>
+  </g>
+</svg>
+  <div class="kicker">Project presentation · real hardware · HRI</div>
+  <h1>Hand-guided teleoperation</h1>
+  <p class="lead">Move your index finger in front of a depth camera and a <b>5-DOF SO-ARM101</b> chases it in real time. The chain is fingertip → 3D point → robot frame via a one-time AprilTag calibration → smoothing → IK, with safety rails at every stage.</p>
+  <div class="who"><p><b>Sowmiya Jeromiah</b> · Robotics Engineer</p><div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">MediaPipe</span><span class="tag">RealSense</span><span class="tag">AprilTag</span><span class="tag">LeRobot</span></div></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Demo">
+  <div class="kicker">Demo</div>
+  <div class="row fill" style="gap:48px">
+    <div class="vid" style="width:440px;flex:none"><video data-src="../media/hand-teleop.mp4" poster="../media/hand-teleop.jpg" muted loop playsinline></video></div>
+    <div class="center" style="flex:1">
+      <h2 style="font-size:52px">Point, and it follows</h2>
+      <ul class="bul">
+        <li>Top: the <b>Hand Tracking</b> window, with MediaPipe landmarks and the tracked fingertip</li>
+        <li>Bottom: a phone view of the same moment, with the real arm chasing the hand</li>
+        <li>The <b>AprilTag</b> on the base calibrates camera → robot once, at startup</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Live demo">
+  <div class="kicker">Live demo</div>
+  <h2 style="margin-bottom:24px">Interactive: the transform chain, live</h2>
+  <div class="demo-mount fill" data-demo="hand"></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Pipeline">
+  <div class="kicker">Architecture</div>
+  <h2>A reactive, topic-driven pipeline</h2>
+  <div class="pipe">
+    <div class="st hw"><i>RealSense</i><b>RGB + aligned depth</b><span>+ CameraInfo</span></div><div class="ar">→</div>
+    <div class="st"><i>hand_tracker.py</i><b>Fingertip</b><span>→ /hand_pixel</span></div><div class="ar">→</div>
+    <div class="st"><i>pixel_to_3d.py</i><b>Back-project</b><span>→ /hand_3d</span></div><div class="ar">→</div>
+    <div class="st hot"><i>transform_point.py</i><b>TF + filter</b><span>→ /target_point</span></div><div class="ar">→</div>
+    <div class="st hot"><i>hand_chase.py</i><b>IK + safety</b><span>→ SO101Follower</span></div>
+  </div>
+  <div class="box cool mt"><h3>Once, at startup: <code>tag_to_tf.py</code></h3><p>AprilTag → <b>static TF</b> camera_optical_frame → base_link, used by <code>transform_point.py</code> for every target.</p></div>
+  <div class="cols-2 mt">
+    <div class="box"><h3>Why topics, not an action?</h3><p>It's continuous streaming control with no "done". Actions suit discrete goals with feedback and cancellation.</p></div>
+    <div class="box"><h3>Why small nodes?</h3><p>Each stage can be debugged, restarted and echoed on its own. The cost is per-hop latency and no end-to-end timing owner.</p></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Fingertip to 3D">
+  <div class="kicker">Perception</div>
+  <h2>Fingertip pixel → metric 3D point</h2>
+  <div class="cols-2">
+    <div class="box"><span class="num">HAND_TRACKER.PY</span><ul class="bul" style="gap:10px">
+      <li class="small">MediaPipe: 21 landmarks. Uses the <b>average of tip (8) and PIP (6)</b>, since the tip alone is the noisiest point</li>
+      <li class="small">EMA α = 0.7 · deadband 5 px · rate limit 0.4 s (2.5 Hz)</li></ul></div>
+    <div class="box hot"><span class="num">PIXEL_TO_3D.PY</span><ul class="bul" style="gap:10px">
+      <li class="small"><b>Aligned</b> depth, so pixel (u, v) means the same point in both images</li>
+      <li class="small"><b>Median</b> of non-zero depth in a 5 px window, robust to holes and edges</li></ul></div>
+  </div>
+  <div class="formula mt" style="text-align:center">Z = depth[v, u] / 1000 &nbsp;·&nbsp; X = (u − c<sub>x</sub>)·Z / f<sub>x</sub> &nbsp;·&nbsp; Y = (v − c<sub>y</sub>)·Z / f<sub>y</sub></div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="AprilTag calibration">
+  <div class="kicker">Extrinsic calibration</div>
+  <h2>Camera → robot, calibrated once</h2>
+  <div class="cols-12 fill">
+    <div class="center" style="gap:20px">
+      <div class="formula">T<sub>cam→base</sub> = T<sub>cam→tag</sub> · T<sub>tag→base</sub></div>
+      <p class="small">Tag pose from apriltag_ros (PnP). T<sub>tag→base</sub> is a measured offset parameter.</p>
+    </div>
+    <ul class="bul center">
+      <li><b>30 samples averaged</b>: translations by mean, rotations by quaternion sum-and-normalise <b>with a sign flip</b> (q and −q are the same rotation)</li>
+      <li>Published as a <b>static TF</b>, because the arm itself occludes the tag while operating. Live re-detection would break the moment it moves</li>
+      <li>Trade-off: if the camera is bumped, the calibration is silently stale until restart</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Filtering & IK">
+  <div class="kicker">Filtering &amp; control</div>
+  <h2>Smooth small motions, snap to big ones</h2>
+  <div class="cols-2">
+    <div class="box"><span class="num">TRANSFORM_POINT.PY</span><ul class="bul" style="gap:10px">
+      <li class="small">tf2 lookup at "latest", which is fine because the transform is static</li>
+      <li class="small">EMA α = 0.25 · deadband 1.5 cm</li>
+      <li class="small"><b>Reset on jumps &gt; 0.25 m</b>, so a re-acquired hand doesn't make the arm crawl along a path it was never asked to take</li></ul></div>
+    <div class="box hot"><span class="num">HAND_CHASE.PY · IK</span><ul class="bul" style="gap:10px">
+      <li class="small">LeRobot RobotKinematics on the URDF, targeting <code>gripper_frame_link</code> (TCP)</li>
+      <li class="small"><b>Position-only</b> IK, with <b>wrist_roll masked</b> to protect the camera cable</li>
+      <li class="small">Seeded from the <b>measured</b> joint state every cycle, iterated 20× per callback</li></ul></div>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Safety layers">
+  <div class="kicker">Safety</div>
+  <h2>Four independent safety layers</h2>
+  <div class="cols-4">
+    <div class="box"><span class="num">HARDWARE</span><p>Servo registers set at startup: <b>velocity 40, acceleration 15</b>.</p></div>
+    <div class="box"><span class="num">WORKSPACE</span><p>Hard clamp: x, y ∈ [−0.25, 0.25] m, z ∈ [0.05, 0.40] m.</p></div>
+    <div class="box"><span class="num">PER STEP</span><p>Largest joint move capped at <b>25°</b>, scaling all joints to keep the direction.</p></div>
+    <div class="box hot"><span class="num">DEAD-MAN</span><p>No target for <b>&gt; 3 s</b> → home. On shutdown → home, then disconnect.</p></div>
+  </div>
+  <div class="box cool mt"><h3>Even a bad IK result is bounded</h3><p>Whatever the solver returns still passes the workspace clamp and the per-step clamp, two independent layers, before it reaches the motors. The step cap also guards against near-singularity joint swings.</p></div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Limits & questions">
+  <div class="kicker">Honest limits · Q&amp;A</div>
+  <h2>What I'd improve</h2>
+  <div class="cols-2">
+    <div><h3>Known gaps</h3><ul class="bul warn">
+      <li>No explicit "hand lost" signal: it relies on the 3 s timeout</li>
+      <li>Tag-to-base rotation assumed zero</li>
+      <li><code>cv2.imshow</code> in the callback blocks a headless deployment</li>
+      <li>A second hand entering the frame can steal tracking</li></ul></div>
+    <div><h3>Next</h3><ul class="bul">
+      <li>One <b>Kalman filter</b> with a velocity model, instead of three ad hoc filters</li>
+      <li>An explicit hand-lost message and plausibility checks on Z</li>
+      <li>Calibrate the tag rotation, or run full hand-eye calibration</li>
+      <li>A headless mode without GUI calls</li></ul></div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/demos.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

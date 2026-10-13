@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RRR end-effector control — presentation · Sowmiya Jeromiah</title>
+<meta name="description" content="Presentation: 3-DOF planar RRR arm tracking a moving target with closed-form IK, PID control and potential-field obstacle avoidance.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../assets/demos.css">
+</head>
+<body data-deck="RRR end-effector control">
+<div id="viewport"><div id="stage">
+
+<section class="slide title" data-title="Title">
+  <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
+  <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
+  <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
+  <g class="em-spin-rev"><text class="em-ring"><textPath href="#emring" textLength="515" lengthAdjust="spacing">RRR ARM · INVERSE KINEMATICS · PID · RRR ARM · INVERSE KINEMATICS · PID · </textPath></text></g>
+  <g class="em-icon">
+  <circle cx="122" cy="120" r="12" class="em-faint" stroke-dasharray="3 3"/><circle cx="122" cy="120" r="4" class="em-obs"/>
+  <g class="em-tgt"><circle cx="130" cy="70" r="7" class="em-acc"/><path d="M130 58v6M130 76v6M118 70h6M136 70h6" class="em-acc"/></g>
+  <path d="M60 138h30" class="em-faint"/>
+  <g class="em-j1"><path d="M72 138 L84 104"/><circle cx="72" cy="138" r="4.5" class="em-fill"/>
+    <g class="em-j2"><path d="M84 104 L112 92"/><circle cx="84" cy="104" r="3.8" class="em-fill"/>
+      <g class="em-j3"><path d="M112 92 L128 72"/><circle cx="112" cy="92" r="3.5" class="em-fill"/><circle cx="128" cy="72" r="3" class="em-cube"/></g></g></g>
+  </g>
+</svg>
+  <div class="kicker">Project presentation · control · internship challenge</div>
+  <h1>RRR end-effector control</h1>
+  <p class="lead">A 3-DOF planar arm tracks a moving target using <b>closed-form inverse kinematics</b> and <b>PID joint control</b>, and avoids an obstacle with a repulsive force field.</p>
+  <div class="who"><p><b>Sowmiya Jeromiah</b> · Robotics Engineer</p><div class="tags"><span class="tag">Python</span><span class="tag">NumPy · SciPy</span><span class="tag">Matplotlib</span><span class="tag">Docker Compose</span></div></div>
+</section>
+
+<section class="slide" data-title="Output">
+  <div class="kicker">Simulation output</div>
+  <h2>Tracking, with and without an obstacle</h2>
+  <div class="cols-2 fill">
+    <div style="display:flex;flex-direction:column;min-height:0"><div class="img fill"><img src="../media/rrr-sim.png" alt="Simulation without obstacle"></div><div class="cap">Without obstacle: the end-effector (blue) follows the target (green)</div></div>
+    <div style="display:flex;flex-direction:column;min-height:0"><div class="img fill"><img src="../media/rrr-sim_obs.png" alt="Simulation with obstacle"></div><div class="cap">With obstacle: the path bends around the red circle</div></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Live demo">
+  <div class="kicker">Live demo</div>
+  <h2 style="margin-bottom:24px">Interactive: tune the PID live</h2>
+  <div class="demo-mount fill" data-demo="rrr"></div>
+</section>
+
+<section class="slide" data-title="Method">
+  <div class="kicker">Method</div>
+  <h2>Target → IK → PID → joints</h2>
+  <div class="pipe">
+    <div class="st"><i>_setup_trajectory()</i><b>Moving target</b><span>(2L, L·sin 2πft), 2 s start delay</span></div><div class="ar">→</div>
+    <div class="st hot"><i>_ik_rrr_all()</i><b>Closed-form IK</b><span>every joint solution</span></div><div class="ar">→</div>
+    <div class="st hot"><i>PID</i><b>Joint control</b><span>P · I (θ_integral) · D (θ_derivative)</span></div><div class="ar">→</div>
+    <div class="st"><i>matplotlib</i><b>Animate</b><span>arm, target and paths</span></div>
+  </div>
+  <div class="box cool mt2"><h3>Optional task: obstacle repulsion</h3><p><code>_obstacle_repulsion()</code> keeps a safe zone of <b>twice the obstacle radius</b>. Targets inside it are pushed out to the boundary, and the push gets stronger the closer they are.</p></div>
+</section>
+
+<section class="slide" data-title="Design choices">
+  <div class="kicker">Reading the brief</div>
+  <h2>Design choices</h2>
+  <div class="cols-2">
+    <div class="box"><span class="num">01</span><h3>Why IK</h3><p>The brief says to track using only the target's position. IK maps a Cartesian position directly to joint angles.</p></div>
+    <div class="box"><span class="num">02</span><h3>Why PID on top</h3><p>Jumping to each IK solution looks clumsy. PID on the joints gives smooth motion and shrinking error.</p></div>
+    <div class="box"><span class="num">03</span><h3>Two rates</h3><p>Task A: 30 Hz target. Task B: 5 Hz target with a 50 Hz control loop.</p></div>
+    <div class="box hot"><span class="num">04</span><h3>Moved the obstacle</h3><p>At the brief's position (L, 0.5L) the obstacle never touched the arm's path, so I moved it to <b>(2.0, 0.35)</b>, r = 0.125, and documented why.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Likely questions">
+  <div class="kicker">Q &amp; A</div>
+  <h2>Questions to be ready for</h2>
+  <div class="cols-2">
+    <div class="box"><h3>"A 3R planar arm has multiple IK solutions?"</h3><p><code>_ik_rrr_all()</code> returns all the closed-form configurations instead of just one. Switching between them would look clumsy, so PID on the joints keeps the motion smooth.</p></div>
+    <div class="box"><h3>"What does each PID term do?"</h3><p>P reacts to the current error, I removes steady-state offset, D damps how fast the error changes.</p></div>
+    <div class="box"><h3>"Limits of potential fields?"</h3><p>They're reactive and can get stuck in local minima. A planner such as RRT, or MoveIt for 3D arms, is the robust alternative.</p></div>
+    <div class="box"><h3>"How do you run it?"</h3><p><code>docker compose --profile sim up --build</code>, or <code>--profile sim-obstacle</code>. No local installs.</p></div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/demos.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

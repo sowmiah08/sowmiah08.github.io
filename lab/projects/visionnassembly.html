@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>visionNassembly — Sowmiya Jeromiah</title>
+<meta name="description" content="Vision-guided dual-arm assembly in simulation: two SO-101 arms, an overhead RGB-D camera, SAM 2, model fitting and MoveIt 2, with automatic failure recovery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/project.css">
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="wrap">
+    <a class="back" href="../index.html#work">← all projects</a>
+    <div class="nav-r">
+      <button class="pbtn hot" data-present title="Present this project as slides (P)">▶ <span class="lbl">Present</span></button>
+      <a class="pbtn" href="https://github.com/sowmiah08/visionNassembly" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<!-- 1 -->
+<header class="hero" data-slide>
+  <div class="wrap">
+    <div class="crumb">Case study · Simulation · Dual-arm manipulation</div>
+    <h1>visionNassembly</h1>
+    <p class="pstatus"><i></i>Completed · working demo in simulation · next: active perception (planned)</p>
+    <p class="tagline">Two SO-101 robot arms use an overhead RGB-D camera to find parts on a table, pick them up and assemble them: a 4-pin plug into a socket, and a peg into a plate. When something fails, the system recovers on its own.</p>
+    <div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">Gazebo Harmonic</span><span class="tag">MoveIt 2</span><span class="tag">SAM 2.1</span><span class="tag">Open3D</span><span class="tag">CUDA</span><span class="tag">Python</span></div>
+    <div class="glance">
+      <div><b>11 / 12</b><span>randomised trials succeeded</span></div>
+      <div><b>≈ 1 mm</b><span>6-DoF pose error</span></div>
+      <div><b>1.2 · 1.6 mm</b><span>mean insertion error (plug · peg)</span></div>
+      <div><b>0 lines</b><span>of new code to add a part</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- 2 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">01 / DEMO</div>
+    <h2>Watch it run</h2>
+    <div class="player reveal">
+      <video src="../../media/visionNassembly.mp4" poster="../../media/visionNassembly.jpg" autoplay muted loop playsinline controls preload="metadata"></video>
+      <div class="vbar">
+        <span><span class="rec">●</span> Gazebo · overhead camera → SAM 2 masks vs. simulator ground truth → grasp &amp; insertion</span>
+        <span class="speeds"><button data-speed="0.5">0.5×</button><button data-speed="1" class="on">1×</button><button data-speed="2">2×</button> <span class="tc">0:00</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">02 / THE PROBLEM</div>
+    <h2>Assemble parts whose positions you don't know</h2>
+    <p>Nothing about the scene is given to the robot. Each part can be anywhere in the arm's reachable area, at any rotation, partly hidden from the camera, and the sensors are noisy. The system has to see the parts, find each one's exact position and rotation, then pick it up and insert it to millimetre tolerance. When a step fails, it needs to notice and recover instead of carrying on blindly.</p>
+    <div class="two" style="margin-top:22px">
+      <div class="card reveal">
+        <h3 style="margin-top:0">Inputs</h3>
+        <ul class="ck"><li>One overhead <b>RGB-D camera</b></li><li>Each part's <b>3D model</b>, built from its simulation model</li><li>A short <b>YAML</b> file per part: how to grip it and how it mates</li></ul>
+      </div>
+      <div class="card reveal">
+        <h3 style="margin-top:0">Outputs</h3>
+        <ul class="ck"><li>A <b>6-DoF pose</b> for every part (≈1 mm)</li><li>A planned <b>grasp → lift → align → insert</b></li><li>A <b>verified</b> assembly, or a clear "not found"</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">03 / HOW IT WORKS</div>
+    <h2>See → locate → act → recover</h2>
+    <div class="diagram reveal">
+      <svg viewBox="0 0 1000 210" role="img" aria-label="Pipeline: overhead camera, depth segmentation, SAM 2 masks, model fitting to 6-DoF pose, MoveIt plans grasp lift align insert verify, with recovery loop">
+        <rect class="n" x="2" y="40" width="150" height="74" rx="12"/><text class="t1" x="16" y="70">Overhead RGB-D</text><text class="t2" x="16" y="90">depth + colour</text>
+        <rect class="n" x="190" y="40" width="150" height="74" rx="12"/><text class="t1" x="204" y="70">Find objects</text><text class="t2" x="204" y="90">depth vs. table</text>
+        <rect class="n" x="378" y="40" width="150" height="74" rx="12"/><text class="t1" x="392" y="70">SAM 2 masks</text><text class="t2" x="392" y="90">exact outline</text>
+        <rect class="n hot" x="566" y="40" width="150" height="74" rx="12"/><text class="t1" x="580" y="70">Fit 3D model</text><text class="t2" x="580" y="90">6-DoF pose ≈1 mm</text>
+        <rect class="n hot" x="754" y="40" width="244" height="74" rx="12"/><text class="t1" x="768" y="70">MoveIt 2 · assemble.py</text><text class="t2" x="768" y="90">grasp→lift→align→insert→verify</text>
+        <path class="e" d="M152 77 H190"/><path class="e" d="M340 77 H378"/><path class="e" d="M528 77 H566"/><path class="e" d="M716 77 H754"/>
+        <path class="e" style="stroke:var(--warm)" d="M876 114 V168 H77 V118"/>
+        <text class="el" x="500" y="192" text-anchor="middle">recovery: re-scan · next grasp · spiral search around the hole</text>
+      </svg>
+    </div>
+    <div class="flow" style="margin-top:22px">
+      <div class="st reveal"><div><h3>See</h3><p>Depth separates the objects from the table, and SAM 2 draws an exact mask around each one.</p><div class="io">/camera depth + RGB → per-object masks</div></div></div>
+      <div class="st reveal"><div><h3>Locate</h3><p>Each part's 3D model (built from its simulation model) is fitted to the masked depth points. That gives its position and rotation.</p><div class="io">masked points + model → 6-DoF pose (ObjectPose.msg)</div></div></div>
+      <div class="st reveal"><div><h3>Act</h3><p>MoveIt plans a straight-down grasp, a lift and a careful insertion.</p><div class="io">pose → grasp → lift → align → insert</div></div></div>
+      <div class="st reveal"><div><h3>Recover</h3><p>If a part isn't found, a grasp misses or an insertion is blocked, the robot re-scans, tries another grasp, or searches around the hole in a spiral.</p><div class="io">failure → re-scan | next grasp | spiral search</div></div></div>
+      <div class="st reveal"><div><h3>Evaluate</h3><p>A test harness randomises the scene and scores every run against the simulator's true poses.</p><div class="io">seeded scene → run → summary.json</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">04 / KEY DECISIONS</div>
+    <h2>What makes it robust</h2>
+    <div class="dec">
+      <div class="card reveal"><h3><i>01</i>Parts are data, not code</h3><p>Adding a new part needs no new code: just its model plus a short YAML file describing how to grip it and how it mates. The peg/plate pair was added this way. Part descriptions live in <code>config/objects/</code>, <code>grippers/</code> and <code>assemblies/</code>.</p></div>
+      <div class="card reveal"><h3><i>02</i>Recovery built into the loop</h3><p>Every stage can fail, and each failure has its own response: re-scan when a part isn't found, try the next grasp when one misses, spiral-search when an insertion is blocked.</p></div>
+      <div class="card reveal"><h3><i>03</i>Honest "not found"</h3><p>When too little of a part is visible, the system reports it as missing instead of guessing. In the one failed trial only 18% of the peg was visible, and it was correctly reported rather than grasped blindly.</p></div>
+      <div class="card reveal"><h3><i>04</i>Measured, not demoed</h3><p>A seeded evaluation harness randomises position, full 360° rotation, occlusion, depth and RGB noise, and 0–3 mm of injected insertion error. Every trial is scored against ground truth.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">05 / ARCHITECTURE</div>
+    <h2>Four ROS 2 packages</h2>
+    <div class="card reveal tbl">
+      <table>
+        <thead><tr><th>Package</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>so101_description</code></td><td>The robot, table, cameras and parts, plus the Gazebo launch file</td></tr>
+          <tr><td><code>so101_moveit_config</code></td><td>MoveIt configuration for both arms</td></tr>
+          <tr><td><code>vision_perception</code></td><td>Perception pipeline, scan service, assembly and evaluation</td></tr>
+          <tr><td><code>vision_perception_interfaces</code></td><td>ROS message and service types: <code>Scan.srv</code>, <code>ObjectPose.msg</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="reveal">
+<pre><span class="c"># start Gazebo, MoveIt and the perception service</span>
+src/vision_perception/scripts/stack.sh start
+
+<span class="c"># one scan, scored against the true poses</span>
+.venv/bin/python -m vision_perception.scan_eval
+
+<span class="c"># run an assembly</span>
+.venv/bin/python .../assemble.py \
+  --assembly plug_into_socket --arm left</pre>
+      </div>
+      <div class="card reveal">
+        <h3 style="margin-top:0">Practical gotchas I hit</h3>
+        <ul class="ck warn">
+          <li>NumPy is pinned to <b>1.26</b>, because NumPy 2 breaks ROS's <code>cv_bridge</code>.</li>
+          <li>Perception runs in a venv with <b>system site-packages</b>, so SAM 2 and the ROS Python packages can both be imported.</li>
+          <li>Perception code must run with <code>.venv/bin/python</code>, not <code>ros2 run</code>, which uses the system Python and can't see SAM 2.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">06 / RESULTS</div>
+    <h2>6 randomised trials per pair</h2>
+    <div class="card reveal tbl">
+      <table>
+        <thead><tr><th>Assembly</th><th>Success</th><th>Pose error</th><th>Insertion error</th></tr></thead>
+        <tbody>
+          <tr><td>Plug → socket (left arm)</td><td class="n">6 / 6</td><td class="n">≈ 1 mm</td><td class="n">1.2 mm mean</td></tr>
+          <tr><td>Peg → plate (right arm)</td><td class="n">5 / 6</td><td class="n">≈ 1 mm</td><td class="n">1.6 mm mean</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lead" style="margin-top:18px">Each trial randomised the part's position (within reach) and its full 360° rotation, plus partial occlusion, depth and RGB noise, and 0–3 mm of injected insertion error. The sample sizes are small, so treat this as a working demo, not a benchmark.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">07 / LIMITS &amp; NEXT</div>
+    <h2>What it can't do yet</h2>
+    <div class="two">
+      <div class="card reveal"><h3 style="margin-top:0">Known limits</h3><ul class="ck warn">
+        <li>The arms can only grasp straight down, within a small reachable area.</li>
+        <li>Only the part's position is randomised. Targets stay in place.</li>
+        <li>Parts that are ≲ 20% visible to the overhead camera aren't found.</li>
+        <li>Simulation only.</li></ul></div>
+      <div class="card reveal"><h3 style="margin-top:0">Next steps</h3><ul class="ck">
+        <li><b>Active perception</b> with the wrist cameras, to look again at hidden parts</li>
+        <li><b>Larger evaluations</b>: more trials, error sweeps and randomised targets</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">08 / HOW I EXPLAIN IT</div>
+    <h2>Talking points</h2>
+    <div class="explain reveal">
+      <p class="pitch">"It's a simulated robot cell where two SO-101 arms use one overhead 3D camera to find parts on a table, work out each part's exact position and rotation to about a millimetre, then pick and assemble them. It recovers from failures by itself, and in randomised tests with occlusion and sensor noise, 11 of 12 assemblies succeeded."</p>
+      <p class="pitch-note">// 30-second pitch</p>
+      <div class="beats">
+        <div><b>1 · SEE</b><p>Depth finds the objects. SAM 2 gives each one an exact mask.</p></div>
+        <div><b>2 · LOCATE</b><p>Fit the part's 3D model to the masked points to get a 6-DoF pose.</p></div>
+        <div><b>3 · ACT + RECOVER</b><p>MoveIt grasps and inserts. Re-scan, next grasp or spiral search on failure.</p></div>
+      </div>
+      <details><summary>Why use SAM 2 if depth already separates the objects?</summary><p>Depth tells me where something sticks up from the table. SAM 2 gives the exact outline of each object, so the points I fit the model to belong to that part only. A clean mask means a clean pose.</p></details>
+      <details><summary>What happened in the one failure?</summary><p>Only 18% of the peg was visible to the camera. The system reported it as "not found" instead of grasping blindly, which is the behaviour I want. The fix on the roadmap is to use the wrist cameras to take a second look.</p></details>
+      <details><summary>How hard is it to add a new part?</summary><p>There's no new code. You add the part's model and a short YAML file describing how to grip it and how it mates with its target. I added the whole peg/plate pair that way.</p></details>
+      <details><summary>How do you know it actually works?</summary><p>A test harness randomises the part's position and full rotation, occlusion, sensor noise and injected insertion error, then scores every run against the simulator's true poses. Results go to a <code>summary.json</code> with one log per trial.</p></details>
+      <details><summary>What would you do next?</summary><p>Active perception with the wrist cameras for hidden parts, then larger evaluations with more trials, error sweeps and randomised targets, before moving to real hardware.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap next">
+  <a href="../index.html#work"><small>← back</small><span>All projects</span></a>
+  <a class="r" href="pick-and-place.html"><small>next project →</small><span>Autonomous pick &amp; place</span></a>
+</div>
+<footer><div class="wrap">© Sowmiya Jeromiah · press <b>P</b> to present this page</div></footer>
+<script src="../assets/project.js"></script>
+</body>
+</html>

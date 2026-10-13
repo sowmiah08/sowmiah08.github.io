@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple detection — presentation · Sowmiya Jeromiah</title>
+<meta name="description" content="Presentation: apple detection for yield estimation, from a YOLOv8 combined-dataset experiment to a deployed YOLO11s model exported to ONNX.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../assets/demos.css">
+</head>
+<body data-deck="Apple detection">
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title" data-title="Title">
+  <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
+  <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
+  <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
+  <g class="em-spin-rev"><text class="em-ring"><textPath href="#emring" textLength="515" lengthAdjust="spacing">APPLE DETECTION · YOLO11s · YIELD ESTIMATION · APPLE DETECTION · YOLO11s · YIELD ESTIMATION · </textPath></text></g>
+  <g class="em-icon">
+  <path d="M100 84 C88 74 66 80 68 104 C70 126 86 140 100 134 C114 140 130 126 132 104 C134 80 112 74 100 84 Z" class="em-apple"/>
+  <path d="M100 84 Q101 72 108 66" /><path d="M103 74 Q114 66 120 72 Q110 80 103 74 Z" class="em-leaf"/>
+  <rect x="60" y="62" width="80" height="80" rx="3" class="em-acc" stroke-dasharray="6 4"/>
+  <rect x="60" y="52" width="47" height="11" rx="2" class="em-tab"/><text x="64" y="60.5" class="em-lbl">apple .92</text>
+  <path d="M62 70h76" class="em-scan"/>
+  </g>
+</svg>
+  <div class="kicker">Project presentation · agri-robotics · deep learning</div>
+  <h1>Apple detection for yield estimation</h1>
+  <p class="lead">Fine-tuning YOLO to find and count apples in dense orchard images: a <b>YOLOv8</b> experiment on a combined dataset, then a cleaner <b>YOLO11s</b> run that's exported to ONNX and deployed.</p>
+  <div class="who"><p><b>Sowmiya Jeromiah</b> · Robotics Engineer</p><div class="tags"><span class="tag">YOLO11s</span><span class="tag">YOLOv8s</span><span class="tag">Ultralytics</span><span class="tag">Colab T4</span><span class="tag">ONNX</span></div></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Results in the wild">
+  <div class="kicker">Results</div>
+  <div class="row fill" style="gap:32px">
+    <div class="img" style="width:420px;flex:none"><img src="../media/apple-orchard.jpg" alt="Dense orchard with apples in detection boxes" style="object-fit:cover"></div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:20px;min-height:0">
+      <h2 style="margin:0 0 4px">What the detector sees</h2>
+      <div class="img" style="flex:1"><img src="../media/apple-detect-1.jpg" alt="Original and detection result with confidence scores"></div>
+      <div class="img" style="flex:1"><img src="../media/apple-detect-2.jpg" alt="Cluster of apples with detections"></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Live demo">
+  <div class="kicker">Live demo</div>
+  <h2 style="margin-bottom:24px">Interactive: how detection metrics work</h2>
+  <div class="demo-mount fill" data-demo="apples"></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Two experiments">
+  <div class="kicker">Project history</div>
+  <h2>Two experiments, one deployed model</h2>
+  <div class="cols-2">
+    <div class="box"><span class="num">EXPERIMENT 1 · YOLOv8s</span><p>A <b>combined dataset</b> for diversity: MinneApple + Kaggle + custom Roboflow labels. MinneApple masks converted to boxes (<code>findContours → boundingRect</code>) and COCO JSON converted to YOLO. Batch 16, 640 px, 50 epochs.</p><p class="small mt" style="color:var(--faint)">A prior experiment, not deployed.</p></div>
+    <div class="box hot"><span class="num">EXPERIMENT 2 · YOLO11s</span><p>A <b>single, consistent dataset</b>: 2,208 train / 318 val images, one class. Batch 36, 640 px, 50 epochs, about 1.4 h on a Colab <b>Tesla T4</b>. Exported to <code>best.onnx</code>.</p><p class="small mt grn">This is the model in the inference script, with a complete, trustworthy log.</p></div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Training">
+  <div class="kicker">Training · what the log shows</div>
+  <h2>Transfer learning, made concrete</h2>
+  <div class="cols-3">
+    <div class="box hot"><span class="num">TRANSFER</span><p><b>493 / 499</b> layer groups from COCO-pretrained yolo11s. Only the head is re-initialised (nc 80 → 1).</p></div>
+    <div class="box"><span class="num">OPTIMISER</span><p><code>optimizer=auto</code>: Ultralytics picked <b>AdamW, lr 0.002</b>. Not hand-tuned, and I say so.</p></div>
+    <div class="box"><span class="num">AUGMENTATION</span><p>Default recipe. <b>Mosaic is switched off for the last 10 epochs</b>, so fine-tuning sees realistic single images.</p></div>
+  </div>
+  <div class="box cool mt"><h3>A training anomaly I can explain</h3><p>Epoch 1 took about <b>18 min</b>; epochs 2–50 took 65–75 s. The most likely cause is the dataset on Google Drive: the first epoch faults every image in over the network, and later epochs hit a warm cache.</p></div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Results & deployment">
+  <div class="kicker">Evaluation · deployment</div>
+  <h2>A believable result profile</h2>
+  <div class="kpis">
+    <div class="kpi"><b>0.822</b><span>precision</span></div>
+    <div class="kpi"><b>0.754</b><span>recall</span></div>
+    <div class="kpi"><b>0.853</b><span>mAP@50</span></div>
+    <div class="kpi"><b>0.495</b><span>mAP@50–95</span></div>
+  </div>
+  <div class="cols-3 mt2">
+    <div class="box"><h3>Recall &lt; precision</h3><p>It misses apples more often than it imagines them, which is consistent with occlusion, the known hard problem in orchard data.</p></div>
+    <div class="box"><h3>The 50 vs 50–95 gap</h3><p>It finds apples well, but boxing round, overlapping fruit pixel-tight is hard.</p></div>
+    <div class="box hot"><h3>Deployment</h3><p>ONNX on <b>CPU</b>, conf = 0.5. Lower for yield counting, higher for picking.</p></div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Honest limits & next">
+  <div class="kicker">Rough edges I can explain</div>
+  <h2>Limits, and what's next</h2>
+  <div class="cols-2">
+    <div><h3>Known rough edges</h3><ul class="bul warn">
+      <li>Example detections come from the <b>validation split</b>, not a blind test set</li>
+      <li><code>!cp runs …</code> lacked <code>-r</code> and couldn't copy the folder. The zip + download after it is what worked</li>
+      <li>The deploy script is a single-image, GUI-based smoke test, not a service</li>
+      <li>Metrics read from the console table: should use <code>metrics.box.map50</code></li></ul></div>
+    <div><h3>Next</h3><ul class="bul">
+      <li>A genuinely separate test set before claiming generalisation</li>
+      <li>More dense-cluster labels to close the recall gap</li>
+      <li>Batch, video or headless inference</li>
+      <li><span style="color:var(--faint)">(ideas)</span> tracking across frames to count each apple once, and depth for 3D picking positions</li></ul></div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/demos.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

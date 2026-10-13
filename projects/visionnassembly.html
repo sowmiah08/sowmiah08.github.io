@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>visionNassembly — presentation · Sowmiya Jeromiah</title>
+<meta name="description" content="Presentation: vision-guided dual-arm assembly with SO-101 arms, RGB-D perception, SAM 2, ICP pose estimation, MoveIt 2 and automatic recovery.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../assets/demos.css">
+</head>
+<body data-deck="visionNassembly">
+<div id="viewport"><div id="stage">
+
+<!-- 1 -->
+<section class="slide title" data-title="Title">
+  <svg class="emblem" viewBox="0 0 200 200" aria-hidden="true">
+  <defs><radialGradient id="emg" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#3a3029"/><stop offset="1" stop-color="#1e1f24"/></radialGradient>
+  <path id="emring" d="M100 100 m-82 0 a82 82 0 1 1 164 0 a82 82 0 1 1 -164 0"/></defs>
+  <circle cx="100" cy="100" r="96" class="em-spin em-outer"/>
+  <circle cx="100" cy="100" r="70" fill="url(#emg)" class="em-disc"/>
+  <g class="em-spin-rev"><text class="em-ring"><textPath href="#emring" textLength="515" lengthAdjust="spacing">VISIONNASSEMBLY · 6-DOF POSE · ASSEMBLY · VISIONNASSEMBLY · 6-DOF POSE · ASSEMBLY · </textPath></text></g>
+  <g class="em-icon">
+  <g class="em-dim"><path d="M100 60 L80 92 M100 60 L120 92" stroke-dasharray="3 4"/><rect x="93" y="54" width="14" height="9" rx="2"/></g>
+  <g class="em-bob"><rect x="82" y="90" width="36" height="18" rx="3" class="em-fill"/>
+    <path d="M89 108v7M96 108v7M104 108v7M111 108v7" class="em-acc"/>
+    <path d="M118 90h14" class="em-x"/><path d="M118 90v-14" class="em-y"/><path d="M118 90l-9 -8" class="em-z"/></g>
+  <rect x="70" y="120" width="60" height="16" rx="3"/>
+  <path d="M89 120v5M96 120v5M104 120v5M111 120v5" class="em-faint"/>
+  </g>
+</svg>
+  <div class="kicker">Project presentation · 3D vision &amp; manipulation</div>
+  <h1>visionNassembly</h1>
+  <p class="lead">Vision-guided dual-arm assembly in simulation. Two SO-101 arms use one overhead RGB-D camera to find parts, estimate their <b>6-DoF pose</b>, and assemble a plug into a socket and a peg into a plate, recovering from failures on their own.</p>
+  <div class="who"><p><b>Sowmiya Jeromiah</b> · Robotics Engineer</p><div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">Gazebo Harmonic</span><span class="tag">MoveIt 2</span><span class="tag">SAM 2.1</span><span class="tag">Open3D</span></div></div>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Demo">
+  <div class="kicker">Demo</div>
+  <div class="cols-21 fill">
+    <div class="vid"><video data-src="../media/visionNassembly.mp4" poster="../media/visionNassembly.jpg" muted loop playsinline></video></div>
+    <div class="center">
+      <h2 style="font-size:50px">What you're seeing</h2>
+      <ul class="bul">
+        <li><b>Overhead camera</b>: the RGB-D view the system works from</li>
+        <li><b>SAM 2 masks</b>: one exact mask per detected part</li>
+        <li><b>Ground truth</b>: the simulator's true poses, used <b>only for scoring</b></li>
+        <li>Then the <b>grasp, alignment and insertion</b> close-ups</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="Live demo">
+  <div class="kicker">Live demo</div>
+  <h2 style="margin-bottom:24px">Interactive: the perception pipeline, simplified</h2>
+  <div class="demo-mount fill" data-demo="pose"></div>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Problem & architecture">
+  <div class="kicker">Problem &amp; architecture</div>
+  <h2>Assemble parts whose pose you don't know</h2>
+  <div class="cols-3">
+    <div class="box"><span class="num">UNKNOWN POSE</span><p>Any position in reach, full 360° rotation. Nothing is given to the robot.</p></div>
+    <div class="box"><span class="num">REAL-WORLD MESS</span><p>Partial occlusion, depth and RGB noise, injected insertion error.</p></div>
+    <div class="box"><span class="num">MILLIMETRE FITS</span><p>About <b>2 mm</b> clearance on the plug pins and <b>3 mm</b> on the peg.</p></div>
+  </div>
+  <div class="pipe mt2">
+    <div class="st hw"><i>sensor</i><b>Overhead RGB-D</b><span>640×480 · f ≈ 320</span></div><div class="ar">→</div>
+    <div class="st hot"><i>/perception/scan</i><b>Perception</b><span>depth → SAM 2 → ICP</span></div><div class="ar">→</div>
+    <div class="st hot"><i>assemble.py</i><b>Task logic</b><span>grasp · insert · verify</span></div><div class="ar">→</div>
+    <div class="st"><i>MoveIt 2</i><b>Planning</b><span>pick_ik · RRTConnect</span></div><div class="ar">→</div>
+    <div class="st hw"><i>ros2_control</i><b>2 × SO-101</b><span>Gazebo Harmonic</span></div>
+  </div>
+  <div class="loopback"><span>↺ recovery: re-scan · next grasp · spiral search</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="Perception">
+  <div class="kicker">Perception</div>
+  <h2>From depth pixels to identified parts</h2>
+  <div class="pipe">
+    <div class="st"><i>01</i><b>Back-project</b><span>x = (u−cx)·z/fx</span></div><div class="ar">→</div>
+    <div class="st"><i>02</i><b>Table plane</b><span>RANSAC · keep 4–150 mm</span></div><div class="ar">→</div>
+    <div class="st"><i>03</i><b>Remove robot</b><span>URDF shapes + live TF</span></div><div class="ar">→</div>
+    <div class="st"><i>04</i><b>DBSCAN (x, y)</b><span>eps 8 mm · min 10</span></div><div class="ar">→</div>
+    <div class="st hot"><i>05</i><b>SAM 2.1 masks</b><span>cluster box = prompt</span></div><div class="ar">→</div>
+    <div class="st"><i>06</i><b>Identify</b><span>size match ≤ 35%</span></div>
+  </div>
+  <div class="cols-2 mt2">
+    <div class="box"><h3>Why cluster on footprint only?</h3><p>From above, the plug body and its knob have no visible side joining them, so <b>3D clustering split the plug in two</b>. The x, y footprint keeps it together.</p></div>
+    <div class="box cool"><h3>The occluder leak</h3><p>SAM 2 works on colour, so a mask could include an occluder in front of a part, making it look 25 cm tall. Fix: keep only mask points <b>inside the height band</b>.</p></div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="Pose estimation">
+  <div class="kicker">Perception · pose</div>
+  <h2>6-DoF pose by model fitting (ICP)</h2>
+  <div class="cols-21 fill">
+    <ul class="bul">
+      <li><b>Point-to-plane ICP</b> in two stages: 12 mm then 4 mm matching distance</li>
+      <li><b>Several starting yaws</b> (every 15° within the symmetry period) to avoid local minima</li>
+      <li><b>Only camera-facing model points</b>, which fixed a 12 mm top/bottom-face mix-up that still scored a near-perfect fit</li>
+      <li><b>Table prior</b>: a part on the table rests on it, leaving only x, y and yaw to find</li>
+      <li><b>Fitness ≥ 0.8</b> means "found", otherwise "missing" <b>with a reason</b></li>
+    </ul>
+    <div class="center" style="gap:20px">
+      <div class="kpi"><b>≈ 1 mm</b><span>position · &lt; 1° rotation</span></div>
+      <div class="kpi"><b>0.6–0.7 mm</b><span>constant camera / calibration bias, removable</span></div>
+      <div class="kpi"><b>1–1.5 s</b><span>per scan</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="Manipulation & recovery">
+  <div class="kicker">Manipulation &amp; autonomy</div>
+  <h2>Every step verified, every failure recovered</h2>
+  <div class="pipe">
+    <div class="st"><i>01</i><b>Grasp</b><span>straight down · TCP offset</span></div><div class="ar">→</div>
+    <div class="st"><i>02</i><b>Descend</b><span>Cartesian 5 mm, dry-run</span></div><div class="ar">→</div>
+    <div class="st"><i>03</i><b>Lift + measure</b><span>re-scan in hand</span></div><div class="ar">→</div>
+    <div class="st hot"><i>04</i><b>Align + insert</b><span>arrival check + final scan</span></div>
+  </div>
+  <table class="t mt">
+    <tr><th>Failure</th><th>Detected by</th><th>Recovery</th></tr>
+    <tr><td>Part not found</td><td>scan reply + reason</td><td>park arm, re-scan (up to 3×)</td></tr>
+    <tr><td>Grasp missed</td><td>gripper closed fully</td><td>open, re-scan, retry</td></tr>
+    <tr><td>Insert blocked</td><td>arm stops short</td><td><b>spiral search</b> 1.5 / 3 / 4.5 mm (3/3 recovered)</td></tr>
+  </table>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="Results & hardest problem">
+  <div class="kicker">Evaluation · hardest problem</div>
+  <h2>Measured, not demoed</h2>
+  <div class="cols-12">
+    <div>
+      <table class="t">
+        <tr><th>Assembly</th><th>Success</th><th>Insertion</th></tr>
+        <tr><td>Plug → socket</td><td class="n">6 / 6</td><td class="n">1.2 mm</td></tr>
+        <tr><td>Peg → plate</td><td class="n">5 / 6</td><td class="n">1.6 mm</td></tr>
+      </table>
+      <p class="small mt">Randomised position, 360° rotation, occlusion, noise and 0–3 mm insertion error, scored against ground truth. The one failure had <b>18%</b> visible and was correctly reported missing.</p>
+    </div>
+    <div class="box">
+      <span class="num">STAR · CONFIDENT BUT WRONG</span>
+      <p>Partly hidden parts failed even at <b>86% visible</b>. I reproduced the scene from its seed and isolated the stage: with most of the part hidden, the fit was <b>41 mm off at 82% confidence</b>. Comparing fixes on 20 noisy copies, the winner was a physical rule: <b>parts rest on the table</b>.</p>
+      <div class="result mt" style="padding:16px 20px"><b style="font-size:40px">4/20 → 20/20</b><p class="small">correct poses; parts only 35–42% visible were then assembled</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Real camera, limits & next">
+  <div class="kicker">From simulation to a real 3D camera</div>
+  <h2>What changes with a real point cloud</h2>
+  <div class="cols-2">
+    <div class="box hot"><h3>Hand-eye calibration</h3><p>Overhead camera = <b>eye-to-hand</b>; wrist cameras = <b>eye-in-hand</b>. Several robot poses viewing a target → solve <b>AX = XB</b>. Free in simulation, the first job on hardware.</p></div>
+    <div class="box"><h3>Better clouds → better fits</h3><p><b>Structured light</b> is very precise at close range; ToF has multipath; stereo needs texture. Fewer missing points matter most under occlusion.</p></div>
+    <div class="box cool"><h3>Reflective &amp; dark parts</h3><p>Filter outliers, let colour (SAM 2) define the object where depth is missing, fit fewer reliable points with priors, take more views.</p></div>
+    <div class="box"><h3>Limits → next</h3><p>Simulation only, 12 trials, small reach, &lt;20% visibility missed. Next: <b>wrist-camera active perception</b>, bigger evaluations, a learned-pose baseline.</p></div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/demos.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

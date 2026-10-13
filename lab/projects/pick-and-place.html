@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous Pick &amp; Place — Sowmiya Jeromiah</title>
+<meta name="description" content="Autonomous pick-and-place on a real SO-101 arm, with RealSense point-cloud perception, TF2 and MoveIt 2.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/project.css">
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="wrap">
+    <a class="back" href="../index.html#work">← all projects</a>
+    <div class="nav-r">
+      <button class="pbtn hot" data-present title="Present this project as slides (P)">▶ <span class="lbl">Present</span></button>
+      <a class="pbtn" href="https://github.com/sowmiah08/precision_pick_and_place_with_inverse_kinematics" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero" data-slide>
+  <div class="wrap">
+    <div class="crumb">Case study · Real hardware · Manipulation</div>
+    <h1>Autonomous pick &amp; place on SO-101</h1>
+    <p class="pstatus"><i></i>Completed · running on real hardware · next: dual-arm hand-off (planned)</p>
+    <p class="tagline">A fully autonomous pick-and-place system on a real SO-101 arm. The robot detects coloured cubes in 3D, plans a collision-free grasp trajectory, closes the gripper, lifts the cube and returns home, then repeats with no human input.</p>
+    <div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">MoveIt 2</span><span class="tag">RealSense D4xx</span><span class="tag">Open3D</span><span class="tag">DBSCAN</span><span class="tag">TF2</span><span class="tag">Feetech FTServo SDK</span></div>
+    <div class="glance">
+      <div><b>Real</b><span>SO-101 hardware, not simulation</span></div>
+      <div><b>10</b><span>stable detections before committing</span></div>
+      <div><b>8-step</b><span>pick cycle, fully async</span></div>
+      <div><b>∞ loop</b><span>runs continuously without restart</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">01 / DEMO</div>
+    <h2>Watch it run</h2>
+    <div class="player reveal">
+      <video src="../../media/pick-and-place.mp4" poster="../../media/pick-and-place.jpg" autoplay muted loop playsinline controls preload="metadata"></video>
+      <div class="vbar">
+        <span><span class="rec">●</span> RViz with live point cloud and MoveIt plan · camera view of the real arm · system architecture</span>
+        <span class="speeds"><button data-speed="0.5">0.5×</button><button data-speed="1" class="on">1×</button><button data-speed="2">2×</button> <span class="tc">0:00</span></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">02 / HOW IT WORKS</div>
+    <h2>From point cloud to motor command</h2>
+    <div class="diagram reveal">
+      <svg viewBox="0 0 1000 160" role="img" aria-label="RealSense to cube_detector to tf_node to move_to_cube to MoveIt move_group to test_bridge to SO-101 arm">
+        <rect class="n hw" x="2" y="40" width="128" height="70" rx="12"/><text class="t1" x="14" y="68">RealSense</text><text class="t2" x="14" y="88">RGB-D cloud</text>
+        <rect class="n" x="150" y="40" width="128" height="70" rx="12"/><text class="t1" x="162" y="68">cube_detector</text><text class="t2" x="162" y="88">HSV→DBSCAN</text>
+        <rect class="n" x="298" y="40" width="128" height="70" rx="12"/><text class="t1" x="310" y="68">tf_node</text><text class="t2" x="310" y="88">camera→base</text>
+        <rect class="n hot" x="446" y="40" width="128" height="70" rx="12"/><text class="t1" x="458" y="68">move_to_cube</text><text class="t2" x="458" y="88">state machine</text>
+        <rect class="n hot" x="594" y="40" width="128" height="70" rx="12"/><text class="t1" x="606" y="68">move_group</text><text class="t2" x="606" y="88">RRTConnect</text>
+        <rect class="n" x="742" y="40" width="128" height="70" rx="12"/><text class="t1" x="754" y="68">test_bridge</text><text class="t2" x="754" y="88">FTServo SDK</text>
+        <rect class="n hw" x="890" y="40" width="108" height="70" rx="12"/><text class="t1" x="902" y="68">SO-101</text><text class="t2" x="902" y="88">right arm</text>
+        <path class="e" d="M130 75 H150"/><path class="e" d="M278 75 H298"/><path class="e" d="M426 75 H446"/><path class="e" d="M574 75 H594"/><path class="e" d="M722 75 H742"/><path class="e" d="M870 75 H890"/>
+        <text class="el" x="140" y="135">/points</text><text class="el" x="282" y="135">/cube_red_3d</text><text class="el" x="430" y="135">/cube_base</text><text class="el" x="582" y="135">/move_action</text><text class="el" x="720" y="135">FollowJointTraj</text><text class="el" x="876" y="135">/dev/ttyACM1</text>
+      </svg>
+    </div>
+    <div class="flow" style="margin-top:22px">
+      <div class="st reveal"><div><h3>Detect cubes in 3D</h3><p>The RealSense point cloud is masked by colour (HSV), clustered with DBSCAN and filtered by cube shape. Red and blue cubes get separate topics.</p><div class="io">/camera/camera/depth/color/points → /cube_red_3d, /cube_blue_3d</div></div></div>
+      <div class="st reveal"><div><h3>Move into the robot's frame</h3><p>TF2 transforms each detection from <code>camera_color_optical_frame</code> into <code>right_base_link</code>.</p><div class="io">PointStamped (camera) → /cube_base (robot)</div></div></div>
+      <div class="st reveal"><div><h3>Commit to a stable target</h3><p>The last 10 detections are buffered, so the arm doesn't chase noise. Once a goal is committed it's locked until the pick cycle finishes.</p><div class="io">10-sample buffer → locked goal</div></div></div>
+      <div class="st reveal"><div><h3>Plan &amp; execute the pick</h3><p>A MoveGroup action client runs the sequence: home → open gripper → move above the cube → close the gripper (3 s) → lift 20 cm → hold 3 s → open → home.</p><div class="io">MoveGroup → FollowJointTrajectory → servos</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">03 / KEY DECISIONS</div>
+    <h2>The engineering that made it reliable</h2>
+    <div class="dec">
+      <div class="card reveal"><h3><i>01</i>Async state machine</h3><p>The pick sequence is a pure ROS 2 async callback chain, with no <code>time.sleep()</code> blocking the executor. Each step triggers the next through action result callbacks and one-shot timers, so the node stays responsive throughout.</p></div>
+      <div class="card reveal"><h3><i>02</i>MoveIt goal design</h3><p>Each goal has a 5 cm position box around the target jaw pose and a top-down orientation constraint <code>[0, -0.707, 0, 0.707]</code>. <code>start_state.is_diff = True</code> makes MoveIt always plan from the real current joint state.</p></div>
+      <div class="card reveal"><h3><i>03</i>Servo drift fix</h3><p>Joint drift after the gripper closed caused <code>CONTROL_FAILED</code> on the lift trajectory. Setting <code>allowed_start_tolerance = 0.0</code> in <code>moveit_controllers.yaml</code> stopped those trajectory rejections.</p></div>
+      <div class="card reveal"><h3><i>04</i>Tuned for success rate</h3><p>Planning success improved significantly after relaxing the lift orientation tolerance to 0.5 rad and disabling start-state validation. Home is reached reliably with a direct joint trajectory.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">04 / INTERFACES</div>
+    <h2>Topics &amp; actions</h2>
+    <div class="card reveal tbl">
+      <table>
+        <thead><tr><th>Topic</th><th>Type</th><th>Direction</th></tr></thead>
+        <tbody>
+          <tr><td><code>/camera/camera/depth/color/points</code></td><td>PointCloud2</td><td>camera → detector</td></tr>
+          <tr><td><code>/cube_red_3d</code>, <code>/cube_blue_3d</code></td><td>PointStamped</td><td>detector → tf_node</td></tr>
+          <tr><td><code>/cube_base</code></td><td>PointStamped</td><td>tf_node → move_to_cube</td></tr>
+          <tr><td><code>/move_action</code></td><td>MoveGroup action</td><td>move_to_cube → MoveIt</td></tr>
+          <tr><td><code>/so101_right_arm_controller/follow_joint_trajectory</code></td><td>FollowJointTrajectory</td><td>MoveIt → test_bridge</td></tr>
+          <tr><td><code>/so101_right_gripper_controller/follow_joint_trajectory</code></td><td>FollowJointTrajectory</td><td>move_to_cube → test_bridge</td></tr>
+          <tr><td><code>/joint_states</code></td><td>JointState</td><td>test_bridge → MoveIt / RViz</td></tr>
+        </tbody>
+      </table>
+    </div>
+<pre class="reveal" style="margin-top:18px"><span class="c"># one launch brings up everything:</span>
+<span class="c"># robot_state_publisher, move_group, RViz, test_bridge, RealSense, cube_detector, tf_node, move_to_cube</span>
+ros2 launch cube_detections full_system.launch.py</pre>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">05 / RESULTS &amp; NEXT</div>
+    <h2>Where it stands</h2>
+    <div class="two">
+      <div class="card reveal"><h3 style="margin-top:0">Results</h3><ul class="ck">
+        <li>The full pick → lift → return cycle <b>runs continuously</b> without a restart</li>
+        <li><b>Stable grasp</b> with a 3 s gripper close and a 3 s hold at lift height</li>
+        <li>Planning success <b>improved significantly</b> after the tolerance changes</li>
+        <li>Home position reached <b>reliably</b> with a direct joint trajectory</li></ul></div>
+      <div class="card reveal"><h3 style="margin-top:0">What I'd build next</h3><ul class="ck">
+        <li>Activate the <b>left arm</b> as a second planning group, for a cube hand-off between arms</li>
+        <li>A <b>placement target</b>, so cubes are set down at a defined spot instead of released mid-air</li>
+        <li><b>Multiple cubes</b>, queued for sequential picking</li></ul></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">06 / HOW I EXPLAIN IT</div>
+    <h2>Talking points</h2>
+    <div class="explain reveal">
+      <p class="pitch">"This runs on a real SO-101 arm. A RealSense camera above the workcell finds coloured cubes in 3D with colour masking and DBSCAN. TF2 moves each detection into the robot's frame, and MoveIt 2 plans a top-down grasp. The arm picks, lifts, returns home and repeats, with no human in the loop."</p>
+      <p class="pitch-note">// 30-second pitch</p>
+      <div class="beats">
+        <div><b>1 · PERCEIVE</b><p>Point cloud → HSV mask → DBSCAN → cube-shape filter.</p></div>
+        <div><b>2 · TRANSFORM</b><p>TF2: camera optical frame → right_base_link.</p></div>
+        <div><b>3 · ACT</b><p>Async MoveIt state machine drives the real servos.</p></div>
+      </div>
+      <details><summary>Why wait for 10 detections before moving?</summary><p>A single point-cloud detection is noisy. If the arm followed every update it would chase noise mid-motion. Buffering 10 stable detections, then locking the goal for the whole cycle, makes the motion decisive and repeatable.</p></details>
+      <details><summary>Why not just use time.sleep() between steps?</summary><p>Sleeping blocks the ROS 2 executor, so callbacks such as joint states and action results stop being processed. I chained the steps with action result callbacks and one-shot timers, so the node stays responsive the whole time.</p></details>
+      <details><summary>What was the hardest bug on real hardware?</summary><p>After the gripper closed, the servos drifted slightly, so MoveIt rejected the lift trajectory with <code>CONTROL_FAILED</code>: the start state didn't match. Setting <code>allowed_start_tolerance = 0.0</code> and planning from the real current state (<code>is_diff = True</code>) fixed it.</p></details>
+      <details><summary>How does MoveIt talk to the robot?</summary><p>MoveIt sends FollowJointTrajectory goals to <code>test_bridge</code>, which drives the Feetech servos over USB serial with the FTServo Python SDK and publishes <code>/joint_states</code> back.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap next">
+  <a href="visionnassembly.html"><small>← previous</small><span>visionNassembly</span></a>
+  <a class="r" href="hand-teleop.html"><small>next project →</small><span>Hand-guided teleoperation</span></a>
+</div>
+<footer><div class="wrap">© Sowmiya Jeromiah · press <b>P</b> to present this page</div></footer>
+<script src="../assets/project.js"></script>
+</body>
+</html>

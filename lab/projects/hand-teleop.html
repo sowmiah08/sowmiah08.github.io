@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hand-Guided Teleoperation — Sowmiya Jeromiah</title>
+<meta name="description" content="Real-time teleoperation of an SO-ARM100 with hand tracking and depth sensing: MediaPipe, RealSense, AprilTag, TF2 and LeRobot IK.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/project.css">
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="wrap">
+    <a class="back" href="../index.html#work">← all projects</a>
+    <div class="nav-r">
+      <button class="pbtn hot" data-present title="Present this project as slides (P)">▶ <span class="lbl">Present</span></button>
+      <a class="pbtn" href="https://github.com/sowmiah08/hand_based_manipulation" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero" data-slide>
+  <div class="wrap">
+    <div class="crumb">Case study · Real hardware · Human–robot interaction</div>
+    <h1>Hand-guided teleoperation</h1>
+    <p class="pstatus"><i></i>Completed · working on real hardware</p>
+    <p class="tagline">Real-time teleoperation of the SO-ARM100 robotic arm using hand tracking and depth sensing. Point with your index finger in front of a depth camera and the robot follows.</p>
+    <div class="tags"><span class="tag">ROS 2 Jazzy</span><span class="tag">MediaPipe</span><span class="tag">RealSense</span><span class="tag">AprilTag</span><span class="tag">TF2</span><span class="tag">LeRobot</span><span class="tag">Python 3.12</span></div>
+    <div class="glance">
+      <div><b>Real-time</b><span>fingertip → arm</span></div>
+      <div><b>2D → 3D</b><span>pixel back-projected with depth</span></div>
+      <div><b>1 tag</b><span>AprilTag gives camera→robot</span></div>
+      <div><b>Safe</b><span>capped speed, clamped workspace</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">01 / DEMO</div>
+    <h2>Point, and it follows</h2>
+    <div class="player portrait reveal">
+      <video src="../../media/hand-teleop.mp4" poster="../../media/hand-teleop.jpg" autoplay muted loop playsinline controls preload="metadata"></video>
+      <div class="side">
+        <h3>What you're seeing</h3>
+        <p>The <b>Hand Tracking</b> window shows MediaPipe's hand landmarks on the RealSense image, with the index fingertip highlighted. Alongside it, the real SO-ARM100 moves to follow the fingertip as the hand moves around the table.</p>
+        <p>The AprilTag fixed to the robot base, visible in the frame, is how the camera knows where the robot is.</p>
+        <div class="vbar" style="border:1px solid var(--border);border-radius:10px">
+          <span class="speeds"><button data-speed="0.5">0.5×</button><button data-speed="1" class="on">1×</button><button data-speed="2">2×</button></span>
+          <span class="tc">0:00</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">02 / HOW IT WORKS</div>
+    <h2>Fingertip pixel → robot joint angles</h2>
+    <div class="diagram reveal">
+      <svg viewBox="0 0 1000 250" role="img" aria-label="RealSense RGB to hand_tracker; depth and camera info to pixel_to_3d; AprilTag to tag_to_tf; transform_point to target_point; hand_chase IK to motors">
+        <rect class="n hw" x="2" y="80" width="130" height="70" rx="12"/><text class="t1" x="14" y="110">RealSense</text><text class="t2" x="14" y="130">RGB · depth · info</text>
+        <rect class="n" x="180" y="10" width="160" height="62" rx="12"/><text class="t1" x="194" y="36">hand_tracker</text><text class="t2" x="194" y="56">MediaPipe fingertip</text>
+        <rect class="n" x="180" y="96" width="160" height="62" rx="12"/><text class="t1" x="194" y="122">pixel_to_3d</text><text class="t2" x="194" y="142">depth + intrinsics</text>
+        <rect class="n" x="180" y="182" width="160" height="62" rx="12"/><text class="t1" x="194" y="208">apriltag → tag_to_tf</text><text class="t2" x="194" y="228">camera → base_link</text>
+        <rect class="n hot" x="410" y="96" width="170" height="62" rx="12"/><text class="t1" x="424" y="122">transform_point</text><text class="t2" x="424" y="142">TF2 → robot frame</text>
+        <rect class="n hot" x="640" y="96" width="170" height="62" rx="12"/><text class="t1" x="654" y="122">hand_chase.py</text><text class="t2" x="654" y="142">LeRobot IK</text>
+        <rect class="n hw" x="868" y="96" width="130" height="62" rx="12"/><text class="t1" x="880" y="122">SO-ARM100</text><text class="t2" x="880" y="142">serial motors</text>
+        <path class="e" d="M132 100 C155 100 155 41 180 41"/><path class="e" d="M132 115 H180"/><path class="e" d="M132 130 C155 130 155 213 180 213"/>
+        <path class="e" d="M260 72 V96"/>
+        <path class="e" d="M340 127 H410"/><path class="e" d="M340 213 C380 213 380 145 410 145"/>
+        <path class="e" d="M580 127 H640"/><path class="e" d="M810 127 H868"/>
+        <text class="el" x="268" y="88">/hand_pixel</text><text class="el" x="346" y="120">/hand_3d</text><text class="el" x="350" y="200">TF</text><text class="el" x="584" y="120">/target_point</text>
+      </svg>
+    </div>
+    <div class="flow" style="margin-top:22px">
+      <div class="st reveal"><div><h3>Find the fingertip</h3><p>MediaPipe detects the index fingertip in the RGB frame and publishes its pixel coordinates.</p><div class="io">/camera/side_camera/color/image_raw → /hand_pixel</div></div></div>
+      <div class="st reveal"><div><h3>Lift it into 3D</h3><p>The pixel is back-projected into 3D using the aligned depth image and the camera intrinsics.</p><div class="io">/hand_pixel + depth + CameraInfo → /hand_3d (camera frame)</div></div></div>
+      <div class="st reveal"><div><h3>Know where the robot is</h3><p>An AprilTag fixed to the robot base gives the camera-to-robot transform, which is broadcast through TF2.</p><div class="io">/detections → TF camera → base_link</div></div></div>
+      <div class="st reveal"><div><h3>Move the arm</h3><p>The 3D point is transformed into the robot frame. An IK solver from LeRobot computes joint angles and sends them to the arm over serial.</p><div class="io">/target_point → IK → motor commands</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">03 / PACKAGES &amp; SAFETY</div>
+    <h2>Built as small ROS 2 packages</h2>
+    <div class="card reveal tbl">
+      <table>
+        <thead><tr><th>Package</th><th>Node</th><th>Role</th></tr></thead>
+        <tbody>
+          <tr><td><code>hand_tracking</code></td><td><code>hand_tracker</code></td><td>Detects the index fingertip with MediaPipe and publishes <code>/hand_pixel</code></td></tr>
+          <tr><td><code>teleop_mapper</code></td><td><code>pixel_to_3d</code></td><td>Back-projects pixel + depth into a 3D point and publishes <code>/hand_3d</code></td></tr>
+          <tr><td><code>point_target</code></td><td><code>transform_point</code></td><td>Transforms <code>/hand_3d</code> to <code>base_link</code> with TF2 and publishes <code>/target_point</code></td></tr>
+          <tr><td><code>system_bringup</code></td><td><code>tag_to_tf</code></td><td>Listens to AprilTag detections and broadcasts the camera→base_link TF</td></tr>
+          <tr><td><code>robot_description</code></td><td>—</td><td>URDF, Xacro and RViz display launch files for the SO-101</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two" style="margin-top:18px">
+      <div class="card reveal"><h3 style="margin-top:0">Safety built in</h3><ul class="ck warn">
+        <li>Motor velocity and acceleration are <b>capped on startup</b>.</li>
+        <li>Targets are <b>clamped to a bounded workspace</b> before IK is solved.</li>
+        <li>The robot <b>returns home</b> when no target arrives, and on Ctrl+C.</li></ul></div>
+      <div class="reveal">
+<pre><span class="c"># camera, AprilTag, tag→TF, hand tracker,</span>
+<span class="c"># pixel→3D and camera→robot transform</span>
+ros2 launch system_bringup full_system.launch.py
+
+<span class="c"># robot controller (LeRobot env)</span>
+conda activate lerobot
+python hand_chase.py</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">04 / HOW I EXPLAIN IT</div>
+    <h2>Talking points</h2>
+    <div class="explain reveal">
+      <p class="pitch">"You point at a depth camera and the robot arm follows your fingertip in real time. MediaPipe finds the fingertip in the image and depth turns that pixel into a 3D point. An AprilTag on the robot base tells the camera where the robot is, so I can express the point in the robot's own frame. Then LeRobot's IK turns it into joint angles."</p>
+      <p class="pitch-note">// 30-second pitch</p>
+      <div class="beats">
+        <div><b>1 · DETECT</b><p>MediaPipe → index-fingertip pixel.</p></div>
+        <div><b>2 · LOCALISE</b><p>Depth + intrinsics → 3D. AprilTag → camera-to-robot TF.</p></div>
+        <div><b>3 · ACT</b><p>IK → joint angles, sent over serial, with safety limits.</p></div>
+      </div>
+      <details><summary>Why use an AprilTag?</summary><p>The camera sees the hand in its own frame, but the robot needs targets in <code>base_link</code>. A tag fixed to the robot base gives that camera-to-robot transform directly from the image, with no manual extrinsic measurement, and TF2 then handles the conversion.</p></details>
+      <details><summary>How do you get 3D from a 2D detection?</summary><p>I read the aligned depth at the fingertip pixel and back-project it with the camera intrinsics from <code>CameraInfo</code>, using the pinhole model. That gives a 3D point in the camera frame.</p></details>
+      <details><summary>How do you keep it safe?</summary><p>Velocity and acceleration are capped at startup, targets are clamped to a bounded workspace before IK, and the arm goes home when it loses the target or on Ctrl+C.</p></details>
+      <details><summary>Why is it split into separate nodes?</summary><p>Each stage (detect, back-project, transform, control) can be tested and swapped on its own over standard topics. For example, MediaPipe could be replaced with a different hand tracker without touching the control code.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap next">
+  <a href="pick-and-place.html"><small>← previous</small><span>Autonomous pick &amp; place</span></a>
+  <a class="r" href="rrr-control.html"><small>next project →</small><span>RRR end-effector control</span></a>
+</div>
+<footer><div class="wrap">© Sowmiya Jeromiah · press <b>P</b> to present this page</div></footer>
+<script src="../assets/project.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RRR End-Effector Control — Sowmiya Jeromiah</title>
+<meta name="description" content="A 3-DOF planar RRR arm tracking a moving target with closed-form inverse kinematics, PID control and potential-field obstacle avoidance.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/project.css">
+</head>
+<body>
+<div id="progress"></div>
+<nav>
+  <div class="wrap">
+    <a class="back" href="../index.html#work">← all projects</a>
+    <div class="nav-r">
+      <button class="pbtn hot" data-present title="Present this project as slides (P)">▶ <span class="lbl">Present</span></button>
+      <a class="pbtn" href="https://github.com/sowmiah08/Robot_EndEffector_Control" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+<header class="hero" data-slide>
+  <div class="wrap">
+    <div class="crumb">Case study · Control · Internship challenge</div>
+    <h1>RRR end-effector control</h1>
+    <p class="pstatus"><i></i>Completed · internship challenge</p>
+    <p class="tagline">A 3-DOF planar RRR (revolute-revolute-revolute) arm tracks a moving target in 2D space, using closed-form inverse kinematics, PID joint control and optional obstacle avoidance with a repulsive force field.</p>
+    <div class="tags"><span class="tag">Python</span><span class="tag">NumPy · SciPy</span><span class="tag">Matplotlib animation</span><span class="tag">Docker Compose</span></div>
+    <div class="glance">
+      <div><b>3-DOF</b><span>planar arm, L₁ = L₂ = L₃ = 1</span></div>
+      <div><b>Closed-form</b><span>IK, all solutions</span></div>
+      <div><b>PID</b><span>smooth joint tracking</span></div>
+      <div><b>2 profiles</b><span>with / without obstacle</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">01 / OUTPUT</div>
+    <h2>Tracking, with and without an obstacle</h2>
+    <div class="two">
+      <figure class="reveal"><img src="../../media/rrr-sim.png" alt="RRR simulation without obstacle: the end-effector path follows the target path"><figcaption>Without obstacle: the end-effector (blue) follows the target (green)</figcaption></figure>
+      <figure class="reveal"><img src="../../media/rrr-sim_obs.png" alt="RRR simulation with obstacle: the end-effector path bends around the red obstacle"><figcaption>With obstacle: the force field pushes the path around the red circle</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">02 / HOW IT WORKS</div>
+    <h2>Target → IK → PID → joints</h2>
+    <div class="flow">
+      <div class="st reveal"><div><h3>Moving target</h3><p><code>_setup_trajectory()</code> defines the target path (x, y) = (2L, L·sin(2πft)). The robot is held for 2 seconds at the start so it follows the target instead of overlapping it, then tracks the most recent target position.</p></div></div>
+      <div class="st reveal"><div><h3>Closed-form inverse kinematics</h3><p><code>_ik_rrr_all()</code> computes every possible joint configuration for the target end-effector position. The trigonometric solution gives more than one answer.</p></div></div>
+      <div class="st reveal"><div><h3>PID joint control</h3><p>P corrects the current error, I (<code>theta_integral</code>) removes steady-state error, and D (<code>theta_derivative</code>) damps the rate of change. Together they avoid overshoot and give a smooth trajectory.</p></div></div>
+      <div class="st reveal"><div><h3>Obstacle repulsion (optional)</h3><p><code>_obstacle_repulsion()</code> keeps a safe zone of twice the obstacle radius. Targets inside it are pushed out to the boundary, and the push gets stronger the closer they are.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">03 / DESIGN CHOICES</div>
+    <h2>Reading the brief carefully</h2>
+    <div class="dec">
+      <div class="card reveal"><h3><i>01</i>Why IK</h3><p>The task says the end-effector must track the target using only the target's position data. Inverse kinematics maps a Cartesian position directly to joint angles, so it's the right tool.</p></div>
+      <div class="card reveal"><h3><i>02</i>Why PID on top</h3><p>Jumping straight to the IK solution makes the motion jerky. PID on the joints smooths the motion and reduces error over time.</p></div>
+      <div class="card reveal"><h3><i>03</i>Two rates tested</h3><p>Task A moves the target at 30 Hz. Task B uses a 5 Hz target with a 50 Hz control loop. Both run side by side in the animation.</p></div>
+      <div class="card reveal"><h3><i>04</i>Obstacle placement</h3><p>The obstacle position given in the brief, (L, 0.5L), sits off the path the robot actually follows, so it would never interact with it. I moved it to (2.0, 0.35) with radius 0.125 so the avoidance can be shown.</p></div>
+    </div>
+<pre class="reveal" style="margin-top:18px"><span class="c"># everything runs in Docker, no local installs needed</span>
+docker compose --profile sim up --build            <span class="c"># without obstacle</span>
+docker compose --profile sim-obstacle up --build   <span class="c"># with obstacle</span></pre>
+  </div>
+</section>
+
+<section class="s" data-slide>
+  <div class="wrap">
+    <div class="snum">04 / HOW I EXPLAIN IT</div>
+    <h2>Talking points</h2>
+    <div class="explain reveal">
+      <p class="pitch">"An internship control challenge: make a 3-link planar arm's end-effector follow a moving target. I solve the IK in closed form for every joint configuration, and use a PID loop on the joints so the motion is smooth instead of jumpy. For the optional part, I added a repulsive force field that pushes the target out of a safe zone around an obstacle. The whole thing runs in Docker with one command."</p>
+      <p class="pitch-note">// 30-second pitch</p>
+      <div class="beats">
+        <div><b>1 · WHERE</b><p>Target path gives the desired (x, y).</p></div>
+        <div><b>2 · HOW</b><p>Closed-form IK → joint angles. PID smooths the motion.</p></div>
+        <div><b>3 · SAFE</b><p>Repulsion field keeps the end-effector out of the obstacle zone.</p></div>
+      </div>
+      <details><summary>A 3-link planar arm has multiple IK solutions. What do you do?</summary><p><code>_ik_rrr_all()</code> returns all the closed-form configurations instead of just one. Jumping between solutions would make the arm clumsy, so the PID loop on the joints keeps the motion smooth and the error shrinking over time.</p></details>
+      <details><summary>What does each PID term do here?</summary><p>P reacts to the current joint error, I accumulates error to remove steady-state offset, and D reacts to how fast the error changes, which damps overshoot.</p></details>
+      <details><summary>How does the obstacle avoidance work?</summary><p>It's a potential-field idea. Around the obstacle there's a safe zone of twice its radius. If the target falls inside, it's pushed outward, more strongly the closer it is, so the end-effector goes around instead of through.</p></details>
+      <details><summary>Why did you change the obstacle position?</summary><p>At the position given in the brief, the obstacle was off the path the arm follows, so the avoidance would never trigger. I moved it to (2.0, 0.35) so the behaviour can actually be demonstrated, and documented why.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="wrap next">
+  <a href="hand-teleop.html"><small>← previous</small><span>Hand-guided teleoperation</span></a>
+  <a class="r" href="apple-detection.html"><small>next project →</small><span>Apple detection</span></a>
+</div>
+<footer><div class="wrap">© Sowmiya Jeromiah · press <b>P</b> to present this page</div></footer>
+<script src="../assets/project.js"></script>
+</body>
+</html>
