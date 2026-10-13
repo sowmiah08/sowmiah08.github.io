@@ -17,7 +17,7 @@ window.PORTFOLIO = {
   links: {
     linkedin: 'https://www.linkedin.com/in/sowmiya-jeromiah/',
     github: 'https://github.com/sowmiah08',
-    email: '',          // e.g. 'you@example.com' — the Email button appears only when this is set
+    email: 'sowmiah.jerom@gmail.com',          // e.g. 'you@example.com' — the Email button appears only when this is set
     cv: ''              // e.g. '../media/Sowmiya_Jeromiah_CV.pdf' — the CV button appears only when this is set
   },
 
